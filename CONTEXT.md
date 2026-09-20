@@ -55,7 +55,7 @@ The per-target leaf that mounts the server app for one deployment target. It is 
 _Avoid_: Handler, adapter, bootstrap
 
 **Adapter**:
-An implementation of an infrastructure capability (storage, email, queue, billing) behind a kit-owned interface, selected at boot. Only adapter packages may import a provider SDK.
+An implementation of an infrastructure capability (storage, email, queue, billing) behind a kit-owned interface, chosen by the entrypoint at composition rather than at run time. Only adapter packages may import a provider SDK.
 _Avoid_: Provider, driver, integration
 
 **Job**:
