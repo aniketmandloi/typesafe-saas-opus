@@ -1,0 +1,7 @@
+{ "name": "schemacheck", "private": true, "type": "module",
+  "dependencies": {
+    "better-auth": "1.7.5",
+    "@better-auth/drizzle-adapter": "1.7.5",
+    "drizzle-orm": "0.45.2",
+    "pg": "8.16.3"
+  } }
