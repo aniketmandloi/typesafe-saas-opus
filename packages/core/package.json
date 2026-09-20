@@ -1,0 +1,14 @@
+{
+  "name": "@repo/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "platform": "universal",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@repo/schema": "workspace:*"
+  },
+  "sideEffects": false
+}

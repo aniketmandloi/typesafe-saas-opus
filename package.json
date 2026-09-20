@@ -1,0 +1,17 @@
+{
+  "name": "spike-bundling",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.3.4",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "trace:lambda": "node scripts/build-lambda.mjs",
+    "trace:vercel": "node scripts/trace-vercel.mjs",
+    "dev:watch": "node scripts/dev-watch.mjs"
+  },
+  "devDependencies": {
+    "@vercel/nft": "^1.11.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0"
+  }
+}

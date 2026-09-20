@@ -1,0 +1,22 @@
+{
+  "name": "@repo/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "platform": "server",
+  "dependencies": {
+    "@hono/node-server": "^1.13.0",
+    "@hono/trpc-server": "^0.4.0",
+    "@repo/core": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/images": "workspace:*",
+    "@repo/jobs": "workspace:*",
+    "@repo/schema": "workspace:*",
+    "@repo/storage": "workspace:*",
+    "@repo/storage-s3": "workspace:*",
+    "@trpc/server": "^11.0.0",
+    "hono": "^4.6.0",
+    "zod": "^4.0.0",
+    "@repo/storage-blob": "workspace:*"
+  }
+}
