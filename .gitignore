@@ -4,3 +4,4 @@ dist/
 .expo/
 out/
 *.tsbuildinfo
+.claude/worktrees/
