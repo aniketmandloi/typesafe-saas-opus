@@ -74,12 +74,19 @@ const sourcesOf = (dir: string): { path: string; text: string }[] => {
 const runtimeImportsOf = (text: string, dep: string): string[] => {
   const spec = `${dep.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:/[^"']*)?`;
   const found: string[] = [];
-  const fromClause = new RegExp(
-    String.raw`(?:^|[\n;])\s*(import|export)\b(\s+type\b)?[\s\S]*?\bfrom\s*["']${spec}["']`,
-    "g",
-  );
-  for (const match of text.matchAll(fromClause)) {
-    if (!match[2]) found.push(match[0].trim().replace(/\s+/g, " "));
+  // Anchor on the specifier and read *backwards* to the keyword that opens the
+  // statement. Matching forwards from `import` needs a wildcard for the clause,
+  // and that wildcard happily spans earlier statements — which reported the
+  // first import in the file as importing whatever the last one did.
+  const specifier = new RegExp(String.raw`\bfrom\s*["']${spec}["']`, "g");
+  for (const match of text.matchAll(specifier)) {
+    const before = text.slice(0, match.index);
+    const opener = /\b(import|export)\b(\s+type\b)?(?![\s\S]*\b(?:import|export)\b)/.exec(before);
+    // No opening keyword means this is not an import statement at all.
+    if (!opener) continue;
+    if (!opener[2]) {
+      found.push(`${before.slice(opener.index).trim()} ${match[0]}`.replace(/\s+/g, " "));
+    }
   }
   const sideEffect = new RegExp(String.raw`(?:^|[\n;])\s*import\s*["']${spec}["']`, "g");
   for (const match of text.matchAll(sideEffect)) {
