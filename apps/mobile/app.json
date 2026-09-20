@@ -1,0 +1,8 @@
+{
+  "expo": {
+    "name": "spike-mobile",
+    "slug": "spike-mobile",
+    "version": "1.0.0",
+    "platforms": ["ios", "android"]
+  }
+}

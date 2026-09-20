@@ -18,5 +18,9 @@
     "hono": "^4.6.0",
     "zod": "^4.0.0",
     "@repo/storage-blob": "workspace:*"
+  },
+  "exports": {
+    ".": "./src/app.ts",
+    "./router": "./src/router.ts"
   }
 }

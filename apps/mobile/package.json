@@ -1,0 +1,18 @@
+{
+  "name": "@repo/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "platform": "native",
+  "scripts": {
+    "export": "expo export --platform ios --output-dir dist"
+  },
+  "dependencies": {
+    "@repo/core": "workspace:*",
+    "@repo/schema": "workspace:*",
+    "@repo/server": "workspace:*",
+    "expo": "57.0.24",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  }
+}
