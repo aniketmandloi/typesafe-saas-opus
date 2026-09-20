@@ -66,6 +66,10 @@ _Avoid_: Config block, partial schema
 An implementation of an infrastructure capability (storage, email, queue, billing) behind a kit-owned interface, chosen by the entrypoint at composition rather than at run time. Only adapter packages may import a provider SDK.
 _Avoid_: Provider, driver, integration
 
+**Identity store**:
+Better Auth and the tables it generates: the canonical record of who a user is, which sessions exist, and who belongs to which Organization. Its tables are read and written directly by the kit's own use cases, and it is never an Adapter, because those tables live in our own database and there is nothing to substitute.
+_Avoid_: Auth provider, auth service, auth layer
+
 **Job**:
 A unit of deferred work identified by a typed payload, enqueued by a use case and drained elsewhere. Not a resumable multi-step run — the kit has no durable execution.
 _Avoid_: Task, workflow, background process
