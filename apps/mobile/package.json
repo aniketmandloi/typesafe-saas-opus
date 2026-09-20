@@ -1,0 +1,14 @@
+{
+  "name": "mobile",
+  "private": true,
+  "main": "index.js",
+  "scripts": { "build": "expo export --platform android --output-dir dist" },
+  "dependencies": {
+    "@repo/probe": "workspace:*",
+    "expo": "57.0.24",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": { "typescript": "~6.0.3" }
+}
