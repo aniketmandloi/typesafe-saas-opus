@@ -1,6 +1,10 @@
 // The two enforced axes from #2: layer order and platform tag. Everything else
 // about the package graph is convention; these two are checked.
-import { readdirSync, readFileSync } from "node:fs";
+//
+// Plus the type-only edge #2 carved out for AppRouter, which ADR-0009's
+// @repo/auth-client now also needs. #2 put that rule in ESLint; #8 removed
+// ESLint, and Biome has no equivalent, so it is enforced here instead.
+import { type Dirent, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 type Platform = "universal" | "server" | "web" | "native" | "none";
@@ -12,6 +16,7 @@ type Pkg = {
   layer: number;
   platform: Platform;
   deps: string[];
+  typeOnly: string[];
 };
 
 // What a package of each platform is allowed to import. A tag is a promise about
@@ -23,6 +28,8 @@ const MAY_IMPORT: Record<Platform, Platform[]> = {
   native: ["universal", "native"],
   none: [],
 };
+
+const SOURCE = /\.(ts|tsx|mts|cts)$/;
 
 const read = (dir: string): Pkg | undefined => {
   let raw: string;
@@ -39,10 +46,46 @@ const read = (dir: string): Pkg | undefined => {
     isApp: dir.startsWith("apps/"),
     layer: repo.layer,
     platform: repo.platform,
+    typeOnly: repo.typeOnly ?? [],
     deps: Object.keys({ ...json.dependencies, ...json.devDependencies }).filter((d) =>
       d.startsWith("@repo/"),
     ),
   };
+};
+
+const sourcesOf = (dir: string): { path: string; text: string }[] => {
+  let entries: Dirent[];
+  try {
+    entries = readdirSync(dir, { recursive: true, withFileTypes: true });
+  } catch {
+    return [];
+  }
+  return entries.flatMap((entry) => {
+    if (!entry.isFile() || !SOURCE.test(entry.name)) return [];
+    if (entry.parentPath.includes("node_modules")) return [];
+    const path = join(entry.parentPath, entry.name);
+    return [{ path, text: readFileSync(path, "utf8") }];
+  });
+};
+
+// A dep declared typeOnly must never survive erasure, so every import of it has
+// to be `import type` / `export type`. A value import would put a server package
+// in a mobile bundle, which is the whole thing the platform tag promises.
+const runtimeImportsOf = (text: string, dep: string): string[] => {
+  const spec = `${dep.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:/[^"']*)?`;
+  const found: string[] = [];
+  const fromClause = new RegExp(
+    String.raw`(?:^|[\n;])\s*(import|export)\b(\s+type\b)?[\s\S]*?\bfrom\s*["']${spec}["']`,
+    "g",
+  );
+  for (const match of text.matchAll(fromClause)) {
+    if (!match[2]) found.push(match[0].trim().replace(/\s+/g, " "));
+  }
+  const sideEffect = new RegExp(String.raw`(?:^|[\n;])\s*import\s*["']${spec}["']`, "g");
+  for (const match of text.matchAll(sideEffect)) {
+    found.push(match[0].trim());
+  }
+  return found;
 };
 
 const packages = ["apps", "packages"].flatMap((root) => {
@@ -63,6 +106,13 @@ for (const pkg of packages) {
     errors.push(`${pkg.dir}: package.json needs "repo": { "layer": <number>, "platform": <tag> }`);
     continue;
   }
+
+  for (const dep of pkg.typeOnly) {
+    if (!pkg.deps.includes(dep)) {
+      errors.push(`${pkg.name} declares ${dep} as typeOnly but does not depend on it`);
+    }
+  }
+
   for (const dep of pkg.deps) {
     const target = byName.get(dep);
     if (!target) {
@@ -72,6 +122,9 @@ for (const pkg of packages) {
     if (target.isApp) {
       errors.push(`${pkg.name} imports the app ${dep}. Nothing imports an app.`);
     }
+    // A type-only edge is erased before any bundler sees it, so it carries
+    // neither layer nor platform meaning. It still has to be proven erased.
+    if (pkg.typeOnly.includes(dep)) continue;
     if (target.layer >= pkg.layer) {
       errors.push(
         `${pkg.name} (layer ${pkg.layer}) imports ${dep} (layer ${target.layer}). Imports go strictly downward.`,
@@ -81,6 +134,18 @@ for (const pkg of packages) {
       errors.push(
         `${pkg.name} is "${pkg.platform}" but imports ${dep}, which is "${target.platform}".`,
       );
+    }
+  }
+
+  if (pkg.typeOnly.length > 0) {
+    for (const source of sourcesOf(pkg.dir)) {
+      for (const dep of pkg.typeOnly) {
+        for (const statement of runtimeImportsOf(source.text, dep)) {
+          errors.push(
+            `${source.path}: ${dep} is typeOnly for ${pkg.name}, so this must be "import type":\n      ${statement}`,
+          );
+        }
+      }
     }
   }
 }
