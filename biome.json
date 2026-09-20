@@ -1,0 +1,72 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "root": true,
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**", "!**/node_modules", "!**/.next", "!**/.expo", "!**/dist", "!**/.turbo"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "project": "all"
+    },
+    "rules": {
+      "correctness": {
+        "useImportExtensions": "error"
+      },
+      "style": {
+        "noProcessEnv": "error",
+        "useConst": "error"
+      },
+      "preset": "recommended"
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always"
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "scripts/**",
+        "apps/*/src/env.ts",
+        "apps/mobile/app.config.ts",
+        "apps/*/instrumentation.ts",
+        "**/entrypoints/**",
+        "packages/profiles/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noProcessEnv": "off"
+          },
+          "suspicious": {
+            "noUndeclaredEnvVars": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/mobile/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useImportExtensions": "off"
+          }
+        }
+      }
+    }
+  ]
+}

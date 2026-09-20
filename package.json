@@ -1,0 +1,24 @@
+{
+  "name": "typesafe-saas-kit",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "preinstall": "node scripts/assert-node-linker.ts",
+    "check:graph": "node scripts/check-graph.ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "build": "turbo run build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "^24.13.6",
+    "turbo": "2.11.2",
+    "typescript": "7.0.2"
+  }
+}
