@@ -51,8 +51,16 @@ The tRPC router type, the one description of what the server offers. Clients con
 _Avoid_: API, interface, schema
 
 **Entrypoint**:
-The per-target leaf that mounts the server app for one deployment target. It is the only place target-specific code may appear.
+The per-target leaf that mounts an app for one deployment target, and the earliest hook on its platform that runs with a real environment before anything depending on configuration. It is the only place target-specific code may appear, and the only place configuration is parsed. Every App has one, not only the server.
 _Avoid_: Handler, adapter, bootstrap
+
+**Deployment profile**:
+The set of Adapters one deployment composes, and therefore the exact environment variables that deployment requires. A property of *where* a deployment runs, never of how it is invoked, so every Entrypoint of the same deployment shares one profile.
+_Avoid_: Environment, stage, preset
+
+**Env fragment**:
+The slice of an environment schema declared by whatever owns those variables — an Adapter package, or the kit itself. A Deployment profile composes only the fragments of the Adapters it wired, so a deployment requires exactly its own providers' variables and nothing more. An environment schema is not a **Schema** in this glossary's sense; that word is reserved for persisted shapes.
+_Avoid_: Config block, partial schema
 
 **Adapter**:
 An implementation of an infrastructure capability (storage, email, queue, billing) behind a kit-owned interface, chosen by the entrypoint at composition rather than at run time. Only adapter packages may import a provider SDK.
