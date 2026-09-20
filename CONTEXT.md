@@ -88,6 +88,18 @@ _Avoid_: Permission, Access level, Scope
 The tenant-owned resource the kit ships as its worked example: the thing the vertical slice creates, lists and deletes. A cloner replaces it with their own domain. Never a deployable unit in `apps/` — that is an App.
 _Avoid_: Item, Resource, Entity
 
+**Dark**:
+The state of an Organization between a deletion request and its Purge: reachable by no tenant-scoped code, causing nothing it would otherwise have caused, yet still wholly present. Distinct from an Organization that simply has no active subscription.
+_Avoid_: Disabled, suspended, archived, deactivated
+
+**Grace window**:
+The fixed period an Organization stays Dark before it is purged, and the only period in which a deletion can be taken back.
+_Avoid_: Retention period, soft-delete window, cooling-off period
+
+**Purge**:
+The irreversible destruction of everything one Organization owns — its records, its stored files and its billing customer. The only act in the kit that removes tenant data.
+_Avoid_: Hard delete, cleanup, reaping, GC
+
 ### Operating the kit
 
 **Admin app**:
