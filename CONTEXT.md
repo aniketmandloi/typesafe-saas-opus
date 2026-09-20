@@ -35,7 +35,7 @@ _Avoid_: Tier, level, ring
 ### What lives where
 
 **Schema**:
-The Drizzle table definitions and the validators derived from them — the single declaration of every persisted shape, from which all other types are inferred.
+The Drizzle table definitions and the validators derived from them — the single declaration of every persisted shape, from which all other types are inferred. Includes the identity tables: the kit declares them itself rather than consuming generated output, so there is one declaration and no second thing moving on its own schedule.
 _Avoid_: Model, entity definition, DTO
 
 **Domain rule**:
