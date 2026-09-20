@@ -113,3 +113,15 @@ _Avoid_: Admin, org admin, admin panel
 **Platform role**:
 A staff position held by the kit operator's own people, governing what the Admin app permits. Entirely separate from Role, which governs a Membership inside one Organization.
 _Avoid_: Superadmin, staff role, global role
+
+**Audit entry**:
+The record that one intent occurred: who acted, in which Organization if any, against what. It names the action and its target and never carries the values that changed, which is what keeps the log readable by platform staff without becoming a view onto tenant content.
+_Avoid_: Log line, event, history record, activity
+
+**Actor**:
+Whoever an Audit entry attributes an action to — a member, a platform staff member, a Job or an incoming webhook. Never merely a user id: a Job and a webhook act with no user behind them at all, and an impersonated action has two parties at once.
+_Avoid_: User, subject, principal
+
+**Impersonation**:
+A platform staff member acting as a member of one Organization, time-boxed and audited, and the only way platform staff reach tenant content. Distinct from holding a Role: it borrows an identity rather than granting a permission.
+_Avoid_: Sudo, assume identity, masquerade, act-as
