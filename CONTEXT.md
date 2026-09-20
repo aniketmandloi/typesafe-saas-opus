@@ -79,3 +79,17 @@ _Avoid_: Permission, Access level, Scope
 **Project**:
 The tenant-owned resource the kit ships as its worked example: the thing the vertical slice creates, lists and deletes. A cloner replaces it with their own domain. Never a deployable unit in `apps/` — that is an App.
 _Avoid_: Item, Resource, Entity
+
+### Operating the kit
+
+**Admin app**:
+The platform operator's own surface onto every tenant: the place support and operations staff answer questions about accounts. Distinct from Org settings, which belongs to the customer.
+_Avoid_: Back-office, console, dashboard
+
+**Org settings**:
+The in-product surface where an Organization manages its own members, roles, billing and profile. Ordinary tenant-scoped product surface with no special powers.
+_Avoid_: Admin, org admin, admin panel
+
+**Platform role**:
+A staff position held by the kit operator's own people, governing what the Admin app permits. Entirely separate from Role, which governs a Membership inside one Organization.
+_Avoid_: Superadmin, staff role, global role
