@@ -16,13 +16,15 @@ Those two together kill the regenerate-and-commit path. Owning the file removes 
 
 **It must be awaited, because nothing fails closed.** `createBetterAuth` does `pendingSchemaCheck.catch(err => ctx.logger.error(...))`. Schema drift is a logged error and the instance serves traffic regardless. Earlier notes in this effort recorded that Better Auth 1.7.3+ fails closed in production; that is not true of 1.7.5, and a gate built on instance construction alone would have caught nothing.
 
-Nine mutations against a real 1.7.5 instance establish its exact reach. It catches **missing tables** and **missing columns**. It does **not** catch a renamed physical column (`boolean("email_verified_x")` passes, because both sides compare the Drizzle property name and the physical name is never examined), a changed type, dropped nullability, or a removed index. It correctly tolerates extra columns and extra indexes of ours — which is why ADR-0007's `deleted_at` on `organization` passes.
+Nine mutations against a real 1.7.5 instance establish its exact reach, and it enforces precisely the two rules `diffSchema` states. **Every table and column Better Auth writes must exist** — matched on the *Drizzle property name*, never the physical column name, which is why `boolean("email_verified_x")` passes untouched. And **a column Better Auth does not write must accept an insert that omits it**: a nullable or defaulted kit column is tolerated, a `NOT NULL` column with no default is rejected. ADR-0007's `deleted_at` passes because it is nullable.
+
+It says nothing about the type or nullability of columns Better Auth *does* write, nor about indexes — `text` changed to `boolean`, a dropped `.notNull()` and a removed index all pass. Extra indexes of ours are tolerated.
 
 So the static gate covers the case that actually occurs on a version bump: Better Auth starts requiring a column we do not declare. The classes it misses are covered **behaviourally**, by a Testcontainers smoke test that signs up a user, creates an Organization and accepts an invitation against the real migrated database. A real `INSERT` is a better oracle than any static comparator for type, nullability and physical-name drift.
 
 Writing our own stricter comparator on `getExpectedSchema` was rejected: it means maintaining a copy of Better Auth's field semantics against an internal API, to duplicate work upstream will eventually do — the diffuse coupling ADR-0009 exists to prevent.
 
-**A kit column on a Better Auth table is nullable or carries a default.** The source comments in `diffSchema` describe this rule, but it is **not enforced** against a Drizzle declaration: a `NOT NULL` column with no default passes the check and then breaks every Better Auth insert at runtime. The smoke test is what actually catches it.
+**A kit column on a Better Auth table is nullable or carries a default** — the second rule above, and the gate does enforce it. ADR-0007's `deleted_at` already complies.
 
 ## Consequences
 
