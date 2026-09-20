@@ -18,7 +18,7 @@ _Avoid_: Consumer, developer, user
 
 **App**:
 A deployable unit in `apps/`. Nothing imports an app.
-_Avoid_: Application, target, project
+_Avoid_: Application, target
 
 **Package**:
 A shared unit in `packages/`, imported by apps and by other packages, published nowhere and consumed as TypeScript source.
@@ -61,3 +61,21 @@ _Avoid_: Provider, driver, integration
 **Job**:
 A unit of deferred work identified by a typed payload, enqueued by a use case and drained elsewhere. Not a resumable multi-step run — the kit has no durable execution.
 _Avoid_: Task, workflow, background process
+
+### Tenancy
+
+**Organization**:
+The tenant. Every piece of product data belongs to exactly one, and there is no isolation boundary above or below it.
+_Avoid_: Account, Workspace, Team, Tenant
+
+**Membership**:
+A user's participation in one Organization, carrying exactly one Role. A user may hold memberships in many Organizations.
+_Avoid_: Affiliation, Org user
+
+**Role**:
+A membership's position in its Organization, drawn from a closed set — owner, admin, member — and the only thing permissions are derived from.
+_Avoid_: Permission, Access level, Scope
+
+**Project**:
+The tenant-owned resource the kit ships as its worked example: the thing the vertical slice creates, lists and deletes. A cloner replaces it with their own domain. Never a deployable unit in `apps/` — that is an App.
+_Avoid_: Item, Resource, Entity
