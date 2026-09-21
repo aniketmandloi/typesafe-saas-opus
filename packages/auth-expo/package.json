@@ -1,5 +1,5 @@
 {
-  "name": "@repo/auth-client",
+  "name": "@repo/auth-expo",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,23 +7,24 @@
     ".": "./src/index.ts"
   },
   "repo": {
-    "layer": 2,
-    "platform": "universal",
-    "typeOnly": [
-      "@repo/auth"
-    ]
+    "layer": 3,
+    "platform": "native"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/auth": "workspace:*",
+    "@better-auth/expo": "1.7.5",
+    "@repo/auth-client": "workspace:*",
     "better-auth": "1.7.5"
   },
   "devDependencies": {
     "typescript": "7.0.2"
   },
   "peerDependencies": {
-    "react": "*"
+    "expo-constants": "*",
+    "expo-linking": "*",
+    "expo-secure-store": "*",
+    "react-native": "*"
   }
 }
