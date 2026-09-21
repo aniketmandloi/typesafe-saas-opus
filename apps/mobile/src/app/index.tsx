@@ -37,6 +37,11 @@ export default function SignInScreen() {
   return (
     <View style={{ padding: 16, gap: 8 }}>
       <Text>{session ? `Signed in as ${session.user.email}` : "Sign in"}</Text>
+      {/* A restored session is only worth restoring if it lets the user in:
+          without this, a signed-in user is looking at a password field. No
+          redirect, because this screen is also where signing in as someone
+          else has to be possible. */}
+      {session ? <Button title="Continue" onPress={() => router.push("/organizations")} /> : null}
       <TextInput placeholder="Name (sign up only)" value={name} onChangeText={setName} />
       <TextInput
         placeholder="Email"
