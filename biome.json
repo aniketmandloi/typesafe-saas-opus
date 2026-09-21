@@ -46,7 +46,8 @@
         "apps/mobile/app.config.ts",
         "apps/*/instrumentation.ts",
         "**/entrypoints/**",
-        "packages/profiles/**"
+        "packages/profiles/**",
+        "**/testing/**"
       ],
       "linter": {
         "rules": {

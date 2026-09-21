@@ -1,5 +1,5 @@
 import type { Auth } from "@repo/auth";
-import type { Database } from "@repo/db";
+import type { Executor } from "@repo/db";
 import type { JobQueue } from "@repo/jobs";
 import type { StorageAdapter } from "@repo/storage";
 
@@ -18,8 +18,14 @@ export type ApiDeps = {
    * boundary: resolving a membership in order to open a TenantDb, and
    * accepting an invitation, which is the mutation that creates the membership
    * the boundary is made of. Every other use case receives a TenantDb.
+   *
+   * Typed `Executor` rather than `Database` so a caller can hand in a
+   * transaction. That is what lets the integration suite run every use case
+   * inside one transaction and roll it back per test — and the use cases open
+   * transactions of their own, so Drizzle savepoints are load-bearing rather
+   * than incidental.
    */
-  db: Database;
+  db: Executor;
   auth: Auth;
   storage: StorageAdapter;
   queue: JobQueue;
