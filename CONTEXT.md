@@ -35,8 +35,12 @@ _Avoid_: Tier, level, ring
 ### What lives where
 
 **Schema**:
-The Drizzle table definitions and the validators derived from them — the single declaration of every persisted shape, from which all other types are inferred. Includes the identity tables: the kit declares them itself rather than consuming generated output, so there is one declaration and no second thing moving on its own schedule.
+The Drizzle table definitions — the single declaration of every persisted shape, from which all other types are inferred. Includes the identity tables: the kit declares them itself rather than consuming generated output, so there is one declaration and no second thing moving on its own schedule. Server-only: a table definition is not safe to run on a phone.
 _Avoid_: Model, entity definition, DTO
+
+**Validator**:
+The declaration of what a client may send — a persisted shape's input surface, tied to its Schema by a type gate and never by a runtime derivation. The only persisted-shape artifact safe to run on a phone, which is what keeps the tables out of a mobile bundle.
+_Avoid_: DTO, input type, form schema
 
 **Domain rule**:
 A pure function over inferred schema types expressing an invariant or a permitted transition. No I/O.
