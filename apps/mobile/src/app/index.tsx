@@ -48,6 +48,13 @@ export default function SignInScreen() {
       <TextInput
         placeholder="Password"
         secureTextEntry
+        // Not decoration: React Native defaults `autoCapitalize` to
+        // "sentences", so an iOS keyboard capitalises the first character of a
+        // typed password and the server answers INVALID_EMAIL_OR_PASSWORD for
+        // a password the user typed correctly. A browser has no such keyboard,
+        // so no web test can catch this.
+        autoCapitalize="none"
+        autoCorrect={false}
         value={password}
         onChangeText={setPassword}
       />
