@@ -80,6 +80,10 @@ _Avoid_: Task, workflow, background process
 The tenant. Every piece of product data belongs to exactly one, and there is no isolation boundary above or below it.
 _Avoid_: Account, Workspace, Team, Tenant
 
+**Personal Organization**:
+The Organization auto-created for a user at signup, carrying a flag that is cleared in place the first time its owner invites someone. There is no org-less mode, so this is what makes the solo-to-team path move no data: the Organization is promoted, never replaced.
+_Avoid_: Personal workspace, default org, solo mode
+
 **Membership**:
 A user's participation in one Organization, carrying exactly one Role. A user may hold memberships in many Organizations.
 _Avoid_: Affiliation, Org user
