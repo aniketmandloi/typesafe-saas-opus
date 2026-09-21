@@ -64,7 +64,7 @@ export const membersRouter = router({
           const promoted = org?.isPersonal === true;
           if (promoted) await tenant.updateOrganization({ isPersonal: false });
 
-          return { row, promoted };
+          return { row, promoted, organizationName: org?.name ?? "" };
         },
         audit: ({ row }) => ({
           action: "member.invited",
@@ -85,6 +85,7 @@ export const membersRouter = router({
         variables: {
           invitationId: created.row.id,
           organizationId: ctx.organizationId,
+          organizationName: created.organizationName,
           inviterName: ctx.actor.name,
         },
       });

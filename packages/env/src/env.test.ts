@@ -35,6 +35,30 @@ describe("a deployment requires exactly its providers' variables", () => {
     expect(Object.keys(migrate.shape)).toEqual(["DATABASE_URL_DIRECT"]);
   });
 
+  // Asserted by tsc, not at runtime. A composed schema that parses to
+  // Record<string, unknown> would force every entrypoint to cast, which is the
+  // duplicate declaration the kit's typesafety contract forbids — spelled as a
+  // cast rather than as an interface.
+  it("composes to a statically known shape", () => {
+    const parsed = composeServerSchema(databaseFragment, authFragment, storage).parse({
+      DATABASE_URL: "postgres://localhost:5432/kit",
+      BETTER_AUTH_SECRET: "test-only-secret-at-least-thirty-two-characters",
+      APP_URL: "http://localhost:3000",
+      S3_BUCKET: "bucket",
+      S3_REGION: "eu-west-1",
+    });
+    const url: string = parsed.DATABASE_URL;
+    const bucket: string = parsed.S3_BUCKET;
+    expect([url, bucket]).toEqual(["postgres://localhost:5432/kit", "bucket"]);
+
+    const withoutStorage = composeServerSchema(databaseFragment).parse({
+      DATABASE_URL: "postgres://localhost:5432/kit",
+    });
+    // @ts-expect-error S3_BUCKET is not on a schema that composed no storage
+    // fragment, so reaching for it is a build failure rather than undefined.
+    expect(withoutStorage.S3_BUCKET).toBeUndefined();
+  });
+
   it("refuses two fragments claiming the same variable", () => {
     const rogue = fragment("storage-other", { S3_BUCKET: shortScalar() });
     expect(() => composeServerSchema(storage, rogue)).toThrow(/declared by both/);

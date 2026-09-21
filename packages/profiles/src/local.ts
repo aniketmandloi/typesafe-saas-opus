@@ -1,11 +1,14 @@
 import { createFakeEmail, fakeEmailFragment } from "@repo/email";
-import { authFragment, databaseFragment } from "@repo/env";
+import { authFragment, composeServerSchema, databaseFragment } from "@repo/env";
 import { createFakeQueue } from "@repo/jobs";
 import { createFakeStorage, fakeStorageFragment } from "@repo/storage";
 
-import { defineProfile, schemaOf } from "./profile.ts";
+import { defineProfile } from "./profile.ts";
 
-const fragments = [databaseFragment, authFragment, fakeStorageFragment, fakeEmailFragment];
+// A tuple, not an array: the composed schema's static shape is derived from
+// these entries, and a widened `EnvFragment[]` erases it back to
+// Record<string, unknown> at the exact point env reaches an entrypoint.
+const fragments = [databaseFragment, authFragment, fakeStorageFragment, fakeEmailFragment] as const;
 
 /**
  * The profile a clean checkout runs under, and the one the tests use.
@@ -29,8 +32,11 @@ export const createLocalProfile = () => {
   return {
     ...defineProfile({
       name: "local",
-      fragments,
-      serverSchema: schemaOf(...fragments),
+      fragments: [...fragments],
+      // Composed here rather than behind a helper: a helper taking
+      // `...fragments: EnvFragment[]` widens the tuple and the schema's static
+      // shape goes with it.
+      serverSchema: composeServerSchema(...fragments),
       createAdapters: () => ({ storage, email, queue }),
     }),
     /** The fakes themselves, for tests that need to assert what was written. */

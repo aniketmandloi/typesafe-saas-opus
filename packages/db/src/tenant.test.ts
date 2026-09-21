@@ -13,7 +13,7 @@ import {
 // No database is dialled. Drizzle compiles a statement without a connection, so
 // these assert what SQL the seam *can produce* — which is exactly the
 // by-construction claim ADR-0001 makes and explicitly does not back with RLS.
-const db = createDb("postgres://localhost:5432/never-connected");
+const db = createDb({ connectionString: "postgres://localhost:5432/never-connected", max: 1 });
 const ORG = "org_a";
 const tenant = createTenantDb(db, ORG);
 

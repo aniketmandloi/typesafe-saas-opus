@@ -1,5 +1,5 @@
 import type { EmailAdapter } from "@repo/email";
-import { composeServerSchema, type EnvFragment } from "@repo/env";
+import type { EnvFragment } from "@repo/env";
 import type { JobQueue } from "@repo/jobs";
 import type { StorageAdapter } from "@repo/storage";
 import type { z } from "zod";
@@ -44,11 +44,3 @@ export const defineProfile = <TSchema extends z.ZodObject>(profile: {
   serverSchema: TSchema;
   createAdapters: (env: z.infer<TSchema>) => Adapters;
 }): DeploymentProfile<TSchema> => profile;
-
-/**
- * Compose a profile's fragments into the schema an entrypoint parses.
- *
- * One `.parse()` per deployment, so a misconfigured one reports *all* its
- * missing variables at once instead of one per restart.
- */
-export const schemaOf = (...fragments: EnvFragment[]) => composeServerSchema(...fragments);
