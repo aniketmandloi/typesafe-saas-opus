@@ -15,7 +15,21 @@ import { Hono } from "hono";
 // an oversight: the entrypoint parses at module scope and hands the result in,
 // so a request never asks its environment anything.
 
-export const createApp = ({ deps }: { deps: ApiDeps }) => {
+export const createApp = ({
+  deps,
+  storageTransfer,
+}: {
+  deps: ApiDeps;
+  /**
+   * The local profile's fake hosts its own bytes, so the URLs it presigns
+   * point back at this process and something has to answer them.
+   *
+   * No deployed profile passes this. S3 hosts its own transfer, and it has to:
+   * Vercel caps request and response at 4.5 MB and Lambda at 6 MB, so bytes
+   * that pass through this app are bytes that do not arrive (ADR-0004).
+   */
+  storageTransfer?: (request: Request) => Promise<Response>;
+}) => {
   const app = new Hono();
 
   // Deliberately dumb. It proves the process is up and serving, and nothing
@@ -38,6 +52,8 @@ export const createApp = ({ deps }: { deps: ApiDeps }) => {
       createContext: ({ req }) => createContext({ deps, headers: req.headers }),
     }),
   );
+
+  if (storageTransfer) app.all("/__storage/*", (c) => storageTransfer(c.req.raw));
 
   return app;
 };

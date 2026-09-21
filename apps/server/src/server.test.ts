@@ -13,14 +13,29 @@ import { createRuntime } from "./runtime.ts";
 // contract is reachable over HTTP, and that a job enqueued by a use case is
 // rendered and sent by the handler that drains it.
 
-const boot = () => {
-  const profile = createLocalProfile();
+const STORAGE_BASE_URL = "http://localhost:3001/__storage";
+
+// `storage` mirrors the node entrypoint: the fake serves its own bytes only
+// where something hosts them, so a boot without it is a deployment whose
+// storage lives elsewhere — which is every real one.
+const boot = ({ storage }: { storage?: boolean } = {}) => {
+  const profile = createLocalProfile(storage ? { storageBaseUrl: STORAGE_BASE_URL } : {});
   const env = profile.serverSchema.parse({
     DATABASE_URL: "postgres://localhost:5432/never-connected",
     BETTER_AUTH_SECRET: "test-only-secret-at-least-thirty-two-characters",
     APP_URL: "http://localhost:3000",
   });
-  return { profile, runtime: createRuntime({ env, profile, target: { pool: { max: 1 } } }) };
+  return {
+    profile,
+    runtime: createRuntime({
+      env,
+      profile,
+      target: { pool: { max: 1 } },
+      ...(storage
+        ? { storageTransfer: (request: Request) => profile.fakes.storage.handle(request) }
+        : {}),
+    }),
+  };
 };
 
 describe("the app mounts", () => {
@@ -99,5 +114,40 @@ describe("a job enqueued by a use case is rendered and sent by the handler", () 
     await expect(
       profile.fakes.queue.enqueue("email.send", { ...payload, to: "not-an-email" }),
     ).rejects.toThrow();
+  });
+});
+
+describe("the transfer half, mounted", () => {
+  it("carries bytes from a presigned PUT to a presigned GET", async () => {
+    const { profile, runtime } = boot({ storage: true });
+    const objectKey = "org/org_a/upload_1";
+
+    const presigned = await profile.fakes.storage.presignUpload({
+      objectKey,
+      contentType: "text/plain",
+      byteSize: 5,
+    });
+    // Through the app rather than through the adapter: what is being proved
+    // here is the mount, so a presigned URL that no route answers fails.
+    const put = await runtime.app.request(presigned.url, {
+      method: "PUT",
+      headers: presigned.headers,
+      body: "hello",
+    });
+    expect(put.status).toBe(200);
+
+    const { url } = await profile.fakes.storage.presignDownload({ objectKey });
+    const got = await runtime.app.request(url);
+    expect(got.status).toBe(200);
+    await expect(got.text()).resolves.toBe("hello");
+  });
+
+  it("mounts nothing when storage hosts its own transfer", async () => {
+    // The shape of every deployed profile: S3 answers its own presigned URLs,
+    // and an app that also answered them would be proxying bytes it cannot
+    // afford to proxy (ADR-0004).
+    const { runtime } = boot();
+    const response = await runtime.app.request("/__storage/anything");
+    expect(response.status).toBe(404);
   });
 });
