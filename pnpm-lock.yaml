@@ -179,6 +179,31 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  packages/db:
+    dependencies:
+      '@repo/core':
+        specifier: workspace:*
+        version: link:../core
+      '@repo/schema':
+        specifier: workspace:*
+        version: link:../schema
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@types/pg@8.15.5)(kysely@0.29.6)(pg@8.16.3)
+      pg:
+        specifier: 8.16.3
+        version: 8.16.3
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.6
+        version: 24.13.6
+      '@types/pg':
+        specifier: 8.15.5
+        version: 8.15.5
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
   packages/env:
     dependencies:
       zod:
