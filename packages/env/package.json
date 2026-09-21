@@ -1,5 +1,5 @@
 {
-  "name": "@repo/core",
+  "name": "@repo/env",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "repo": {
-    "layer": 1,
+    "layer": 0,
     "platform": "universal"
   },
   "scripts": {
@@ -15,9 +15,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@repo/schema": "workspace:*"
+    "zod": "4.6.5"
   },
   "devDependencies": {
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "@types/node": "24.13.6"
   }
 }
