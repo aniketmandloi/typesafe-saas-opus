@@ -1,0 +1,25 @@
+{
+  "name": "@repo/email",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contract": "./src/contract.ts"
+  },
+  "repo": {
+    "layer": 1,
+    "platform": "server"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@repo/env": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  }
+}
