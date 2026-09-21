@@ -35,8 +35,12 @@ _Avoid_: Tier, level, ring
 ### What lives where
 
 **Schema**:
-The Drizzle table definitions and the validators derived from them — the single declaration of every persisted shape, from which all other types are inferred. Includes the identity tables: the kit declares them itself rather than consuming generated output, so there is one declaration and no second thing moving on its own schedule.
+The Drizzle table definitions — the single declaration of every persisted shape, from which all other types are inferred. Includes the identity tables: the kit declares them itself rather than consuming generated output, so there is one declaration and no second thing moving on its own schedule. Server-only: a table definition is not safe to run on a phone.
 _Avoid_: Model, entity definition, DTO
+
+**Validator**:
+The declaration of what a client may send — a persisted shape's input surface, tied to its Schema by a type gate and never by a runtime derivation. The only persisted-shape artifact safe to run on a phone, which is what keeps the tables out of a mobile bundle.
+_Avoid_: DTO, input type, form schema
 
 **Domain rule**:
 A pure function over inferred schema types expressing an invariant or a permitted transition. No I/O.
@@ -49,6 +53,10 @@ _Avoid_: Service, handler, interactor, command
 **Contract**:
 The tRPC router type, the one description of what the server offers. Clients consume it as a type and never at runtime.
 _Avoid_: API, interface, schema
+
+**Wire shape**:
+What a value looks like on the far side of JSON — the Contract's output type, which may legitimately differ from its Schema type and is the truth about that value at the edge. A timestamp is a `Date` in the Schema and an ISO-8601 string in its Wire shape; nothing reconciles the two, because the Contract carries no transformer.
+_Avoid_: Serialized form, payload type, DTO
 
 **Entrypoint**:
 The per-target leaf that mounts an app for one deployment target, and the earliest hook on its platform that runs with a real environment before anything depending on configuration. It is the only place target-specific code may appear, and the only place configuration is parsed. Every App has one, not only the server.
