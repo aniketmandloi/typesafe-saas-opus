@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # One job, as #8 decided. Turborepo already parallelises and caches the task
+  # graph, so a matrix would multiply checkout-and-install setup and lose cache
+  # locality between related tasks.
+  #
+  # A freshly forked repo with zero secrets configured must go green. Nothing
+  # here reads a secret: remote caching is absent rather than optional-and-
+  # broken, and the database comes from Docker on the runner.
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          # The floor, not a preference: Node 20 is EOL and 22 enters
+          # maintenance 2026-10-21 (#8).
+          node-version: 24
+          cache: pnpm
+
+      # `--frozen-lockfile` is the default in CI, named here so it is visible.
+      # The preinstall hook asserts the node-linker, so a hoisted install fails
+      # here rather than at the first `node --watch` (ADR-0010).
+      - run: pnpm install --frozen-lockfile
+
+      # The two enforced axes from #2, and the generated-artifact check from
+      # #15. Cheap, and they fail before anything is compiled.
+      - run: pnpm check:graph
+      - run: pnpm check:env
+
+      - run: pnpm lint
+
+      # Testcontainers starts Postgres from the runner's Docker daemon, so
+      # TEST_DATABASE_URL is deliberately unset: #8 accepted Docker as a hard
+      # prerequisite, and the alternative — a `services:` container — would
+      # make the local and CI paths differ in the one suite that must not be
+      # taken on trust.
+      #
+      # Vitest isolates test files, so the two integration suites each start
+      # their own container. That is a few seconds apiece and buys real
+      # isolation; if it ever dominates the run, one shared container behind a
+      # vitest globalSetup is the fix.
+      - run: pnpm exec turbo run typecheck test build
+        env:
+          # Not a secret and not a deployable value: it is baked into the
+          # bundle at build time, so this build artifact is a check, never a
+          # release. Declared in turbo.json's build task, so a build made with
+          # a different URL cannot be served from cache.
+          NEXT_PUBLIC_API_URL: http://localhost:3101
+
+      # Chromium alone. Three engines is three downloads for a suite whose job
+      # is to prove the flow composes.
+      - run: pnpm --filter @repo/e2e exec playwright install --with-deps chromium
+
+      - run: pnpm e2e
+
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            packages/e2e/test-results
+            packages/e2e/playwright-report
+          retention-days: 7

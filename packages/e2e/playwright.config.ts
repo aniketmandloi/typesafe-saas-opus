@@ -7,7 +7,10 @@ const API_URL = `http://localhost:${API_PORT}`;
 
 // Ports deliberately off the defaults, so a spec never quietly passes against
 // a dev server someone left running.
-const DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgres://localhost:5432/typesafe_saas_kit";
+// Read lazily, because global setup is what puts this there when Docker is
+// providing the database. Reading it at module scope would capture the value
+// from before the container started.
+const databaseUrl = () => process.env.TEST_DATABASE_URL ?? "";
 
 // This package is neither an App nor a Package as CONTEXT.md defines them: it
 // is not deployable and nothing imports it. It lives in `packages/` because it
@@ -16,6 +19,8 @@ const DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgres://localhost:5432
 // forbids importing @repo/db. The graph checker caught that.
 export default defineConfig({
   testDir: "./src",
+  // Starts the database before either server boots, and stops it afterwards.
+  globalSetup: "./src/global-setup.ts",
   // One worker, no parallelism, one browser. This suite exists to prove the
   // flow composes, not to be fast, and a kit that needs a large machine to run
   // its own tests is a kit a cloner cannot run.
@@ -44,7 +49,7 @@ export default defineConfig({
       stderr: "pipe",
       env: {
         PORT: String(API_PORT),
-        DATABASE_URL,
+        DATABASE_URL: databaseUrl(),
         BETTER_AUTH_SECRET: "e2e-only-secret-at-least-thirty-two-characters",
         // The user-facing app, not this server: it is what Better Auth trusts
         // as an Origin and what invitation links point at.
