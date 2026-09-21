@@ -47,7 +47,8 @@
         "apps/*/instrumentation.ts",
         "**/entrypoints/**",
         "packages/profiles/**",
-        "**/testing/**"
+        "**/testing/**",
+        "packages/e2e/**"
       ],
       "linter": {
         "rules": {

@@ -48,6 +48,12 @@ export const createRuntime = <TEnv extends KitEnv>({
     db,
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.APP_URL,
+    // The browser reaches `/api/auth/*` through `apps/web`'s rewrite, so the
+    // Origin it sends is the *web* app's, not this server's. Without APP_URL
+    // trusted, Better Auth rejects every browser sign-in while the RSC and
+    // mobile paths — which send no Origin — keep working. That asymmetry is
+    // exactly the kind of thing only a browser test finds.
+    trustedOrigins: [env.APP_URL],
   });
 
   const deps: ApiDeps = {

@@ -1,0 +1,22 @@
+{
+  "name": "@repo/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "repo": {
+    "layer": 9,
+    "platform": "server"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@repo/db": "workspace:*",
+    "@repo/schema": "workspace:*",
+    "@types/node": "24.13.6",
+    "drizzle-orm": "0.45.2",
+    "typescript": "7.0.2"
+  }
+}

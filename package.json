@@ -17,7 +17,8 @@
     "generate:env": "node scripts/generate-env.ts",
     "check:env": "node scripts/generate-env.ts --check",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node apps/server/src/entrypoints/migrate.ts"
+    "db:migrate": "node apps/server/src/entrypoints/migrate.ts",
+    "e2e": "pnpm --filter @repo/e2e e2e"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
