@@ -12,8 +12,10 @@ Infrastructure capabilities — storage, email, queue, billing — sit behind ki
 
 Each adapter package exports an environment-schema fragment alongside its config type, and the entrypoint composes only the fragments for the adapters it composed. A deployment's env schema therefore *requires* exactly the variables its providers need, instead of making every provider's variables optional and validating nothing.
 
-The billing seam has one implementation (Polar) and is justified by **containment, not substitutability** — keeping merchant-of-record and Team Customer concepts out of use cases. No Stripe adapter exists, so the kit does not claim a proven swap.
+The billing seam has one implementation ([ADR-0017](./0017-polar-is-the-billing-provider.md)) and is justified by **containment, not substitutability** — keeping merchant-of-record and Team Customer concepts out of use cases. No Stripe adapter exists, so the kit does not claim a proven swap.
 
 Image processing stays outside the storage seam. Some providers transform on read and S3 does not; folding transforms in would re-shape the interface around provider capability, which is what demand-shaping rejects.
 
 A fork that widens an interface makes subsequent upstream merges harder. That is the accepted price of having no bypass.
+
+**No provider implementation has ever run on a deployed target.** All three of `apps/server`'s entrypoints compose `createLocalProfile`, so every target serves the fake storage, email and queue *by construction*. The deployed slice proved the target residue — handler signature, pool policy, module-scope parse, the bundle step ([ADR-0016](./0016-deployed-server-targets-ship-a-bundle.md)) — and nothing about the adapter set: no S3 presign has been issued, no SES mail sent and no Postgres queue drained anywhere but a test. That the two are separable at all is [ADR-0006](./0006-entrypoints-parse-env-packages-never-do.md)'s split working as intended; what it costs is that the first real provider composition happens against an unexercised seam.

@@ -48,10 +48,10 @@ await writeFile(
       runtime: "nodejs24.x",
       handler: "index.js",
       launcherType: "Nodejs",
-      // The entrypoint's default export is a Web handler (Request → Response),
-      // which is what `hono/vercel` produces. The Node-style adapter is
-      // deliberately not used: honojs/node-server#306 has POST requests
-      // hanging on Vercel's Node runtime while GET works.
+      // The helpers consume the request stream to populate `req.body`, which
+      // leaves the entrypoint's listener waiting for a body already read —
+      // the most likely mechanism behind honojs/node-server#306, where POST
+      // hangs on Vercel while GET works.
       shouldAddHelpers: false,
       supportsResponseStreaming: true,
     },
