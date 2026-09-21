@@ -1,4 +1,5 @@
-import { insertProjectSchema, project, updateProjectSchema } from "@repo/schema";
+import { project } from "@repo/schema";
+import { insertProjectSchema, updateProjectSchema } from "@repo/validators";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
