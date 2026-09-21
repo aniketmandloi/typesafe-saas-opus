@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  # On demand, for any branch. #8 put the gate on pull requests, which leaves
+  # no way to exercise a branch that has not opened one yet — including the
+  # branch that adds this file.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
