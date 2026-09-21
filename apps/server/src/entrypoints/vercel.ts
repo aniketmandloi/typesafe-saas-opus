@@ -1,5 +1,5 @@
 import { createLocalProfile } from "@repo/profiles";
-import { handle } from "hono/vercel";
+import { getRequestListener } from "@hono/node-server";
 
 import { createRuntime } from "../runtime.ts";
 
@@ -29,4 +29,16 @@ const runtime = createRuntime({
   target: { pool: { max: 10 } },
 });
 
-export default handle(runtime.app);
+// A Node `(req, res)` listener, not a Web handler.
+//
+// The Build Output API hands the function straight to Vercel's Node launcher
+// with no `@vercel/node` wrapping in between, so a handler that takes a
+// `Request` and returns a `Response` is never read: nothing writes to `res`
+// and the request hangs until it times out. Observed, not reasoned about.
+//
+// `shouldAddHelpers` stays off in `.vc-config.json` for the matching reason —
+// the helpers consume the request stream to populate `req.body`, which leaves
+// this listener waiting for a body that has already been read. That is the
+// most likely mechanism behind honojs/node-server#306, where POST hangs on
+// Vercel while GET works.
+export default getRequestListener(runtime.app.fetch);
