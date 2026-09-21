@@ -53,6 +53,16 @@ export const createRuntime = <TEnv extends KitEnv>({
     // trusted, Better Auth rejects every browser sign-in while the RSC and
     // mobile paths — which send no Origin — keep working. That asymmetry is
     // exactly the kind of thing only a browser test finds.
+    //
+    // The rule is narrower than "browsers only", and it bites server-to-server
+    // callers: Better Auth demands a *trusted* Origin from any request carrying
+    // `sec-fetch-mode` or `sec-fetch-site`, and **Node's `fetch` sends
+    // `sec-fetch-mode: cors`**. So a script calling `/api/auth/*` with Node
+    // gets 403 MISSING_OR_NULL_ORIGIN while the identical curl call succeeds.
+    // Such a caller must set an Origin this list trusts. React Native's fetch
+    // sends no `sec-fetch-*` headers and is unaffected — but that is a property
+    // of RN's networking stack, not a guarantee, and if it ever changed mobile
+    // sign-in would fail with a 403 that looks like nothing.
     trustedOrigins: [env.APP_URL],
   });
 
