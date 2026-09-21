@@ -1,5 +1,5 @@
 {
-  "name": "@repo/core",
+  "name": "@repo/validators",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,21 +7,21 @@
     ".": "./src/index.ts"
   },
   "repo": {
-    "layer": 1,
+    "layer": 0,
     "platform": "universal",
     "typeOnly": [
       "@repo/schema"
     ]
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/schema": "workspace:*"
+    "@repo/schema": "workspace:*",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "typescript": "7.0.2",
-    "vitest": "5.0.1"
+    "@types/node": "24.13.6"
   }
 }

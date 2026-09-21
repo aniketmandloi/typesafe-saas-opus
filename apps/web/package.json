@@ -21,7 +21,7 @@
     "@repo/auth-client": "workspace:*",
     "@repo/core": "workspace:*",
     "@repo/env": "workspace:*",
-    "@repo/schema": "workspace:*",
+    "@repo/validators": "workspace:*",
     "@tanstack/react-query": "5.103.1",
     "@trpc/client": "11.19.0",
     "@trpc/tanstack-react-query": "11.19.0",

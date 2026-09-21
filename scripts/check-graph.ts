@@ -16,6 +16,7 @@ type Pkg = {
   layer: number;
   platform: Platform;
   deps: string[];
+  thirdParty: string[];
   typeOnly: string[];
 };
 
@@ -30,6 +31,15 @@ const MAY_IMPORT: Record<Platform, Platform[]> = {
 };
 
 const SOURCE = /\.(ts|tsx|mts|cts)$/;
+
+// Third-party packages a `universal` package may not declare (ADR-0013).
+// The platform tag cannot police this: it only ranks `@repo/*` edges, so a
+// universal package is free to depend on anything off npm. These two ship the
+// Drizzle table machinery, and reaching for them here is how validators derived
+// at run time — and `drizzle-orm/pg-core` with them — end up in a phone's
+// bundle. The cost is bytes, not correctness, which is why it is a denylist
+// rather than a layer rule.
+const UNIVERSAL_DENYLIST = ["drizzle-orm", "drizzle-zod"];
 
 const read = (dir: string): Pkg | undefined => {
   let raw: string;
@@ -49,6 +59,9 @@ const read = (dir: string): Pkg | undefined => {
     typeOnly: repo.typeOnly ?? [],
     deps: Object.keys({ ...json.dependencies, ...json.devDependencies }).filter((d) =>
       d.startsWith("@repo/"),
+    ),
+    thirdParty: Object.keys({ ...json.dependencies, ...json.devDependencies }).filter(
+      (d) => !d.startsWith("@repo/"),
     ),
   };
 };
@@ -112,6 +125,16 @@ for (const pkg of packages) {
   if (typeof pkg.layer !== "number" || !(pkg.platform in MAY_IMPORT)) {
     errors.push(`${pkg.dir}: package.json needs "repo": { "layer": <number>, "platform": <tag> }`);
     continue;
+  }
+
+  if (pkg.platform === "universal") {
+    for (const dep of UNIVERSAL_DENYLIST) {
+      if (pkg.thirdParty.includes(dep)) {
+        errors.push(
+          `${pkg.name} is "universal" but depends on ${dep}, which no universal package may declare.`,
+        );
+      }
+    }
   }
 
   for (const dep of pkg.typeOnly) {
