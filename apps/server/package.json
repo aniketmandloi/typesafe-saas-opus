@@ -25,6 +25,7 @@
     "@repo/schema": "workspace:*",
     "@repo/storage": "workspace:*",
     "@trpc/server": "11.19.0",
+    "drizzle-orm": "0.45.2",
     "hono": "4.13.8",
     "zod": "4.6.5"
   },

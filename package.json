@@ -15,13 +15,16 @@
     "test": "turbo run test",
     "build": "turbo run build",
     "generate:env": "node scripts/generate-env.ts",
-    "check:env": "node scripts/generate-env.ts --check"
+    "check:env": "node scripts/generate-env.ts --check",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node apps/server/src/entrypoints/migrate.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@repo/env": "workspace:*",
     "@repo/profiles": "workspace:*",
     "@types/node": "^24.13.6",
+    "drizzle-kit": "0.31.10",
     "turbo": "2.11.2",
     "typescript": "7.0.2",
     "vitest": "5.0.1",

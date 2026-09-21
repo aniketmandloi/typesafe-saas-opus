@@ -23,7 +23,10 @@ export type Adapters = {
   queue: JobQueue;
 };
 
-export type DeploymentProfile<TSchema extends z.ZodObject = z.ZodObject> = {
+/** What a profile composing no adapters at all hands back (ADR-0012). */
+export type NoAdapters = Record<never, never>;
+
+export type DeploymentProfile<TSchema extends z.ZodObject = z.ZodObject, TAdapters = Adapters> = {
   name: string;
   /** Every fragment this deployment's adapters and the kit itself declare. */
   fragments: EnvFragment[];
@@ -35,12 +38,12 @@ export type DeploymentProfile<TSchema extends z.ZodObject = z.ZodObject> = {
    * misconfigured deployment fails to boot rather than failing per request
    * (ADR-0006).
    */
-  createAdapters(env: z.infer<TSchema>): Adapters;
+  createAdapters(env: z.infer<TSchema>): TAdapters;
 };
 
-export const defineProfile = <TSchema extends z.ZodObject>(profile: {
+export const defineProfile = <TSchema extends z.ZodObject, TAdapters = Adapters>(profile: {
   name: string;
   fragments: EnvFragment[];
   serverSchema: TSchema;
-  createAdapters: (env: z.infer<TSchema>) => Adapters;
-}): DeploymentProfile<TSchema> => profile;
+  createAdapters: (env: z.infer<TSchema>) => TAdapters;
+}): DeploymentProfile<TSchema, TAdapters> => profile;
