@@ -54,6 +54,10 @@ _Avoid_: Service, handler, interactor, command
 The tRPC router type, the one description of what the server offers. Clients consume it as a type and never at runtime.
 _Avoid_: API, interface, schema
 
+**Wire shape**:
+What a value looks like on the far side of JSON — the Contract's output type, which may legitimately differ from its Schema type and is the truth about that value at the edge. A timestamp is a `Date` in the Schema and an ISO-8601 string in its Wire shape; nothing reconciles the two, because the Contract carries no transformer.
+_Avoid_: Serialized form, payload type, DTO
+
 **Entrypoint**:
 The per-target leaf that mounts an app for one deployment target, and the earliest hook on its platform that runs with a real environment before anything depending on configuration. It is the only place target-specific code may appear, and the only place configuration is parsed. Every App has one, not only the server.
 _Avoid_: Handler, adapter, bootstrap
