@@ -10,7 +10,10 @@ const API_URL = `http://localhost:${API_PORT}`;
 // Read lazily, because global setup is what puts this there when Docker is
 // providing the database. Reading it at module scope would capture the value
 // from before the container started.
-const databaseUrl = () => process.env.TEST_DATABASE_URL ?? "";
+// Set by `src/run.ts`, which owns the database and starts this process. It is
+// always present by the time the config is evaluated, which is exactly why
+// that script exists rather than a globalSetup.
+const databaseUrl = process.env.TEST_DATABASE_URL ?? "";
 
 // This package is neither an App nor a Package as CONTEXT.md defines them: it
 // is not deployable and nothing imports it. It lives in `packages/` because it
@@ -19,8 +22,6 @@ const databaseUrl = () => process.env.TEST_DATABASE_URL ?? "";
 // forbids importing @repo/db. The graph checker caught that.
 export default defineConfig({
   testDir: "./src",
-  // Starts the database before either server boots, and stops it afterwards.
-  globalSetup: "./src/global-setup.ts",
   // One worker, no parallelism, one browser. This suite exists to prove the
   // flow composes, not to be fast, and a kit that needs a large machine to run
   // its own tests is a kit a cloner cannot run.
@@ -49,7 +50,7 @@ export default defineConfig({
       stderr: "pipe",
       env: {
         PORT: String(API_PORT),
-        DATABASE_URL: databaseUrl(),
+        DATABASE_URL: databaseUrl,
         BETTER_AUTH_SECRET: "e2e-only-secret-at-least-thirty-two-characters",
         // The user-facing app, not this server: it is what Better Auth trusts
         // as an Origin and what invitation links point at.

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "e2e": "playwright test"
+    "e2e": "node src/run.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
