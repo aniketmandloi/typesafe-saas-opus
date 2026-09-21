@@ -2,16 +2,31 @@
   "$schema": "https://turborepo.com/schema.json",
   "tasks": {
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": [
+        "^typecheck"
+      ]
     },
     "test": {
-      "dependsOn": ["^typecheck"],
-      "env": ["TEST_DATABASE_URL"]
+      "dependsOn": [
+        "^typecheck"
+      ],
+      "env": [
+        "TEST_DATABASE_URL"
+      ]
     },
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["api/**", "dist/**", ".next/**", "!.next/cache/**"],
-      "env": ["NEXT_PUBLIC_API_URL"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".vercel/output/**",
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**"
+      ],
+      "env": [
+        "NEXT_PUBLIC_API_URL"
+      ]
     },
     "dev": {
       "cache": false,
