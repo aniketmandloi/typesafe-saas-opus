@@ -1,4 +1,9 @@
-import { hasOrgPermission, type OrgPermissions, type OrgRole } from "@repo/core";
+import {
+  hasOrgPermission,
+  ORGANIZATION_HEADER,
+  type OrgPermissions,
+  type OrgRole,
+} from "@repo/core";
 import {
   DarkOrganizationError,
   NotAMemberError,
@@ -9,7 +14,7 @@ import {
 import { initTRPC, TRPCError } from "@trpc/server";
 
 import { type AuditDraft, mutate } from "./audit.ts";
-import { type Actor, ORGANIZATION_HEADER, type RequestContext } from "./context.ts";
+import type { Actor, RequestContext } from "./context.ts";
 
 const t = initTRPC.context<RequestContext>().create();
 

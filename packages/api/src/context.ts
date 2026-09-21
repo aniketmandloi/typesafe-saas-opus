@@ -1,14 +1,6 @@
-import type { ApiDeps } from "./deps.ts";
+import { ORGANIZATION_HEADER } from "@repo/core";
 
-/**
- * The Organization the caller names for this request.
- *
- * Tenant context is an argument, not ambient state (#3). Better Auth's
- * `activeOrganizationId` cannot express two browser tabs open on two
- * Organizations: switching in one silently repoints the other, and the next
- * write from it lands in the wrong tenant. A header can express it.
- */
-export const ORGANIZATION_HEADER = "x-organization-id";
+import type { ApiDeps } from "./deps.ts";
 
 export type Actor = {
   userId: string;

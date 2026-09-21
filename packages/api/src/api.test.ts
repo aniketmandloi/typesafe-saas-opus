@@ -1,10 +1,11 @@
+import { ORGANIZATION_HEADER } from "@repo/core";
 import type { Database } from "@repo/db";
 import { auditEvent, member, organization, project } from "@repo/schema";
 import { TRPCError } from "@trpc/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { mutate } from "./audit.ts";
-import { type Actor, ORGANIZATION_HEADER, type RequestContext } from "./context.ts";
+import type { Actor, RequestContext } from "./context.ts";
 import type { ApiDeps } from "./deps.ts";
 import { appRouter } from "./index.ts";
 import { createCallerFactory } from "./trpc.ts";

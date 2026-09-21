@@ -1,6 +1,6 @@
 import { isDark, type OrgRole, parseRoles } from "@repo/core";
 import { member, organization, user } from "@repo/schema";
-import { and, eq, type SQL } from "drizzle-orm";
+import { and, eq, isNull, type SQL } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 
 import type { Executor } from "./client.ts";
@@ -252,4 +252,50 @@ export const openTenantSession = async (
   if (!membership) throw new NotAMemberError(organizationId, userId);
 
   return { tenant, roles: parseRoles(membership.role) };
+};
+
+export type Membership = {
+  organizationId: string;
+  slug: string;
+  name: string;
+  isPersonal: boolean;
+  roles: OrgRole[];
+};
+
+/**
+ * Every Organization this user belongs to.
+ *
+ * Unscoped, and necessarily so: this is the question "which tenants am I in",
+ * asked before any tenant has been named. It is the third read in this file
+ * that establishes the boundary rather than sitting behind it, and it lives
+ * here for the same reason the other two do — ADR-0001 accepts having no
+ * backstop on the condition that the unscoped surface stays small and reviewed.
+ *
+ * Dark Organizations are excluded. One would be unusable anyway — no TenantDb
+ * constructs for it — so listing it would put a door in the UI that only ever
+ * answers NOT_FOUND.
+ */
+/**
+ * The statement `membershipsOf` runs, before it is awaited.
+ *
+ * Exported so a test can assert what it filters on without a database, the
+ * same way every other claim in this file is asserted. Drizzle builders are
+ * lazy, so the SQL is inspectable right up until someone awaits them.
+ */
+export const membershipQuery = (db: Executor, userId: string) =>
+  db
+    .select({
+      organizationId: organization.id,
+      slug: organization.slug,
+      name: organization.name,
+      isPersonal: organization.isPersonal,
+      role: member.role,
+    })
+    .from(member)
+    .innerJoin(organization, eq(organization.id, member.organizationId))
+    .where(and(eq(member.userId, userId), isNull(organization.deletedAt)));
+
+export const membershipsOf = async (db: Executor, userId: string): Promise<Membership[]> => {
+  const rows = await membershipQuery(db, userId);
+  return rows.map(({ role, ...rest }) => ({ ...rest, roles: parseRoles(role) }));
 };

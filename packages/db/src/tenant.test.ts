@@ -6,6 +6,8 @@ import { createDb, type Database } from "./client.ts";
 import {
   createTenantDb,
   DarkOrganizationError,
+  membershipQuery,
+  membershipsOf,
   openTenantDb,
   UnknownOrganizationError,
 } from "./tenant.ts";
@@ -140,6 +142,41 @@ describe("the one read that crosses into the identity store is still scoped", ()
     expect(sql).toContain('inner join "user"');
     expect(sql).toContain('"member"."organization_id" = $1');
     expect(params).toEqual([ORG]);
+  });
+});
+
+// The question asked *before* a tenant is named, so it is unscoped by
+// definition — the third such read in this file, and the list is the point.
+describe("listing a user's Organizations excludes the Dark ones", () => {
+  it("filters on the deletion marker, in SQL", () => {
+    const { sql, params } = membershipQuery(db, "user_a").toSQL();
+    expect(sql).toContain('inner join "organization"');
+    expect(sql).toContain('"user_id" = $1');
+    expect(sql).toContain('"deleted_at" is null');
+    expect(params).toEqual(["user_a"]);
+  });
+
+  it("parses the CSV role column into the closed set", async () => {
+    const stub = {
+      select: () => ({
+        from: () => ({
+          innerJoin: () => ({
+            where: async () => [
+              {
+                organizationId: ORG,
+                slug: "acme",
+                name: "Acme",
+                isPersonal: false,
+                role: "member,admin",
+              },
+            ],
+          }),
+        }),
+      }),
+    } as unknown as Database;
+
+    const [membership] = await membershipsOf(stub, "user_a");
+    expect(membership?.roles).toEqual(["member", "admin"]);
   });
 });
 

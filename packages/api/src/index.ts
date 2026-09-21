@@ -1,10 +1,12 @@
 import { membersRouter } from "./router/members.ts";
+import { organizationsRouter } from "./router/organizations.ts";
 import { projectsRouter } from "./router/projects.ts";
 import { uploadsRouter } from "./router/uploads.ts";
 import { router } from "./trpc.ts";
 
 export const appRouter = router({
   members: membersRouter,
+  organizations: organizationsRouter,
   projects: projectsRouter,
   uploads: uploadsRouter,
 });
@@ -19,6 +21,7 @@ export const appRouter = router({
  */
 export type AppRouter = typeof appRouter;
 
+export { ORGANIZATION_HEADER } from "@repo/core";
 export * from "./audit.ts";
 export * from "./context.ts";
 export * from "./deps.ts";
