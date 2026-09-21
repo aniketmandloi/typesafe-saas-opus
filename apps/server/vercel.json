@@ -1,3 +1,7 @@
 {
-  "regions": ["sin1"]
+  "framework": null,
+  "regions": ["sin1"],
+  "buildCommand": "node scripts/bundle-vercel.ts",
+  "outputDirectory": "public",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }
