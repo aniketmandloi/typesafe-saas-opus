@@ -77,3 +77,20 @@ export const signUpWithEmail = async (
   if (!result.error) await refreshSession(client);
   return result;
 };
+
+/**
+ * The same workaround, at the one call site sign-in does not cover: app start.
+ *
+ * A cold start has a stored cookie and no sign-in to hang a refetch off, so
+ * under [#10545](https://github.com/better-auth/better-auth/issues/10545)
+ * `useSession` stays empty and the app renders a signed-out UI for a user who
+ * is signed in. Observed on a device — the browser path cannot reach it,
+ * because it has no SecureStore and no session to restore.
+ *
+ * Exported rather than called inside `createExpoAuthClient`: the client is
+ * constructed at module scope, and a fetch fired from there races the first
+ * render instead of driving it.
+ */
+export const restoreSession = async (client: ExpoAuthClient) => {
+  await refreshSession(client);
+};

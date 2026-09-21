@@ -45,3 +45,9 @@ export const upload = pgTable(
   },
   (table) => [index("upload_organization_id_idx").on(table.organizationId)],
 );
+
+// The row as the database holds it. A client never sees this type: what crosses
+// the wire is the Contract's output type, where `createdAt` is an ISO string
+// (ADR-0014).
+export type Project = typeof project.$inferSelect;
+export type Upload = typeof upload.$inferSelect;

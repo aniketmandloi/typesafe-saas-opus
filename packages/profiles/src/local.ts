@@ -24,8 +24,15 @@ const fragments = [databaseFragment, authFragment, fakeStorageFragment, fakeEmai
  * read the outbox and the object store the request wrote to. That is also why
  * `createLocalProfile` is a factory: two tests must not share an outbox.
  */
-export const createLocalProfile = () => {
-  const storage = createFakeStorage();
+export const createLocalProfile = (options: { storageBaseUrl?: string } = {}) => {
+  // The fake serves its own transfer half, and only the entrypoint knows the
+  // URL this process answers on — so the profile takes it rather than reading
+  // it. Left unset (every in-process test), the fake presigns `memory://` URLs
+  // that nothing can send to, which is the honest shape for a test that never
+  // transfers a byte.
+  const storage = createFakeStorage(
+    options.storageBaseUrl ? { baseUrl: options.storageBaseUrl } : {},
+  );
   const email = createFakeEmail();
   const queue = createFakeQueue();
 

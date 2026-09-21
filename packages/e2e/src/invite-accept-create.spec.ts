@@ -1,3 +1,5 @@
+import { Buffer } from "node:buffer";
+
 import { expect, test } from "@playwright/test";
 import { createDb } from "@repo/db";
 import { invitation, member, organization, user } from "@repo/schema";
@@ -50,6 +52,32 @@ test("an owner invites, the invitee accepts, and both see the Project", async ({
     await ownerPage.getByLabel("New project").fill(projectName);
     await ownerPage.getByRole("button", { name: "Create" }).click();
     await expect(ownerPage.getByText(projectName)).toBeVisible({ timeout: 15_000 });
+
+    // ---- the upload, bytes and all ----
+    //
+    // The presigned URL names the storage host rather than this origin, so
+    // this step is also the CORS path: Chromium sends a preflight that storage
+    // has to answer before a byte moves. The fake answers it; an S3 bucket
+    // answers nothing until it is configured, which is the divergence a cloner
+    // has to be told about (ADR-0004).
+    const fileBody = `uploaded by ${suffix}`;
+    await ownerPage.getByLabel("Upload a file").setInputFiles({
+      name: "note.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from(fileBody),
+    });
+    await expect(ownerPage.getByText(`Uploaded ${fileBody.length} bytes`)).toBeVisible({
+      timeout: 15_000,
+    });
+
+    // Read back through the URL the procedure signed, not through the key the
+    // client happens to hold: `downloadUrl` reads the row through the TenantDb
+    // first, so a URL exists only for an object this tenant owns.
+    const href = await ownerPage.getByRole("link", { name: "Download" }).getAttribute("href");
+    expect(href).not.toBeNull();
+    const downloaded = await ownerPage.request.get(href ?? "");
+    expect(downloaded.ok()).toBe(true);
+    expect(await downloaded.text()).toBe(fileBody);
 
     // ---- invite ----
     await ownerPage.getByRole("link", { name: "Members" }).click();

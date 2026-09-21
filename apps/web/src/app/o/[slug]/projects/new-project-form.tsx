@@ -1,6 +1,6 @@
 "use client";
 
-import { insertProjectSchema } from "@repo/schema";
+import { insertProjectSchema } from "@repo/validators";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 

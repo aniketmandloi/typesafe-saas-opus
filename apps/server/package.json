@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "node --watch src/entrypoints/node.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build": "node scripts/bundle-vercel.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.1",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@testcontainers/postgresql": "12.1.0",
     "@types/node": "24.13.6",
+    "esbuild": "^0.28.2",
     "typescript": "7.0.2",
     "vitest": "5.0.1"
   }

@@ -1,4 +1,5 @@
-import { requestUploadSchema, upload } from "@repo/schema";
+import { upload } from "@repo/schema";
+import { requestUploadSchema } from "@repo/validators";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";

@@ -1,4 +1,4 @@
-import { insertProjectSchema } from "@repo/schema";
+import { insertProjectSchema } from "@repo/validators";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Button, Text, TextInput, View } from "react-native";

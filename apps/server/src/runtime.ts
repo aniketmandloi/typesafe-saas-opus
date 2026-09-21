@@ -36,10 +36,13 @@ export const createRuntime = <TEnv extends KitEnv>({
   env,
   profile,
   target,
+  storageTransfer,
 }: {
   env: TEnv;
   profile: DeploymentProfile;
   target: TargetConfig;
+  /** Only a profile whose storage is a fake has one; see `createApp`. */
+  storageTransfer?: (request: Request) => Promise<Response>;
 }) => {
   const db = createDb({ connectionString: env.DATABASE_URL, max: target.pool.max });
   const adapters = profile.createAdapters(env);
@@ -79,7 +82,7 @@ export const createRuntime = <TEnv extends KitEnv>({
     adapters,
     deps,
     handlers: createJobHandlers({ email: adapters.email, appUrl: env.APP_URL }),
-    app: createApp({ deps }),
+    app: createApp({ deps, ...(storageTransfer ? { storageTransfer } : {}) }),
   };
 };
 
