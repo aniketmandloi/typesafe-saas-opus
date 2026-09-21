@@ -1,4 +1,4 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { createDb } from "@repo/db";
 import { describe, expect, it } from "vitest";
 
 import { createAuth } from "./auth.ts";
@@ -15,7 +15,11 @@ import { createAuth } from "./auth.ts";
 // It needs no database: findDrizzleSchemaProblems introspects the Drizzle
 // declaration object, not a live connection. So this runs on every pull
 // request at unit-test speed, and the connection string below is never dialled.
-const neverConnected = () => drizzle("postgres://localhost:5432/unused-by-this-test");
+// Built through createDb so it carries the schema the auth config now requires.
+// A bare drizzle() handle has no schema attached, and the gate is about the
+// schema.
+const neverConnected = () =>
+  createDb({ connectionString: "postgres://localhost:5432/unused-by-this-test", max: 1 });
 
 const auth = () =>
   createAuth({

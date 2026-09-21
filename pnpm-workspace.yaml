@@ -1,3 +1,17 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# pnpm 12 refuses to run a dependency's install scripts unless it is answered
+# here, and exits non-zero while any are merely "ignored". A starter kit whose
+# `pnpm install` fails on a clean checkout is broken for every cloner, so every
+# package that asks is answered explicitly.
+allowBuilds:
+  # Fetches its platform binary in a postinstall. Reached through drizzle-kit.
+  esbuild: true
+  protobufjs: true
+  # Optional native speedups for testcontainers' SSH tunnel, which this kit
+  # never uses — Testcontainers talks to a local Docker daemon. The pure-JS
+  # fallbacks are fine.
+  cpu-features: false
+  ssh2: false

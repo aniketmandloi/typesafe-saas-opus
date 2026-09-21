@@ -311,3 +311,147 @@ describe("ADR-0008's append-only trigger, asserted by behaviour", () => {
     });
   });
 });
+
+describe("the slice's own flow: invite, accept, then read as a member", () => {
+  const ACTOR_C: Actor = {
+    userId: "user_c",
+    email: "alan@example.com",
+    name: "Alan",
+    impersonatedBy: null,
+  };
+
+  const invite = (tx: Executor, queue: ReturnType<typeof createFakeQueue>) => {
+    const ctx = contextFor(tx, ACTOR_A, "org_a");
+    ctx.deps.queue = queue;
+    return caller(ctx).members.invite({ email: "alan@example.com", role: "member" });
+  };
+
+  it("promotes the inviter's personal Organization in place", async () => {
+    await inRolledBackTransaction(db, async (tx) => {
+      await seed(tx);
+      const [before] = await tx.select().from(organization).where(eq(organization.id, "org_a"));
+      expect(before?.isPersonal).toBe(true);
+
+      await invite(tx, createFakeQueue());
+
+      const [after] = await tx.select().from(organization).where(eq(organization.id, "org_a"));
+      // Nothing was created and nothing moved. That is #3's growth path: the
+      // Organization is promoted, never replaced.
+      expect(after?.isPersonal).toBe(false);
+      expect(after?.id).toBe("org_a");
+    });
+  });
+
+  it("enqueues the invitation email with the payload the handler expects", async () => {
+    await inRolledBackTransaction(db, async (tx) => {
+      await seed(tx);
+      const queue = createFakeQueue();
+      const created = await invite(tx, queue);
+
+      expect(queue.jobs).toHaveLength(1);
+      expect(queue.jobs[0]).toMatchObject({ name: "email.send" });
+      expect(queue.jobs[0]?.payload).toMatchObject({
+        to: "alan@example.com",
+        template: "organization-invitation",
+        variables: { invitationId: created.id, organizationName: "Org A", inviterName: "Ada" },
+      });
+    });
+  });
+
+  it("lets the invited user accept, and only then see the Organization's Projects", async () => {
+    await inRolledBackTransaction(db, async (tx) => {
+      await seed(tx);
+      const created = await invite(tx, createFakeQueue());
+
+      // Before accepting, Alan is not a member and the tenant does not exist
+      // as far as he is concerned.
+      expect(await codeOf(caller(contextFor(tx, ACTOR_C, "org_a")).projects.list())).toBe(
+        "NOT_FOUND",
+      );
+
+      await caller(contextFor(tx, ACTOR_C, null)).members.accept({ invitationId: created.id });
+
+      const projects = await caller(contextFor(tx, ACTOR_C, "org_a")).projects.list();
+      expect(projects.map((one) => one.id)).toEqual(["p_a"]);
+    });
+  });
+
+  it("refuses a second acceptance, at the unique index", async () => {
+    await inRolledBackTransaction(db, async (tx) => {
+      await seed(tx);
+      const created = await invite(tx, createFakeQueue());
+      const accept = () =>
+        caller(contextFor(tx, ACTOR_C, null)).members.accept({ invitationId: created.id });
+
+      await accept();
+      // The invitation is no longer pending, so this is refused before the
+      // index is reached — but the index is what makes the race safe, and
+      // member(organization_id, user_id) is asserted unique in @repo/db.
+      expect(await codeOf(accept())).toBe("NOT_FOUND");
+
+      const members = await caller(contextFor(tx, ACTOR_A, "org_a")).members.list();
+      expect(members.filter((one) => one.userId === "user_c")).toHaveLength(1);
+    });
+  });
+
+  it("refuses an invitation addressed to someone else", async () => {
+    await inRolledBackTransaction(db, async (tx) => {
+      await seed(tx);
+      const created = await invite(tx, createFakeQueue());
+      const wrongPerson: Actor = { ...ACTOR_C, userId: "user_b", email: "grace@example.com" };
+      expect(
+        await codeOf(
+          caller(contextFor(tx, wrongPerson, null)).members.accept({ invitationId: created.id }),
+        ),
+      ).toBe("NOT_FOUND");
+    });
+  });
+
+  it("writes one audit entry per intent, in the acting Organization", async () => {
+    await inRolledBackTransaction(db, async (tx) => {
+      await seed(tx);
+      const created = await invite(tx, createFakeQueue());
+      await caller(contextFor(tx, ACTOR_C, null)).members.accept({ invitationId: created.id });
+
+      const entries = await tx
+        .select()
+        .from(auditEvent)
+        .where(eq(auditEvent.organizationId, "org_a"));
+      expect(entries.map((one) => one.action).sort()).toEqual([
+        "member.invitation.accepted",
+        "member.invited",
+      ]);
+      // The accepted entry is attributed to the person who accepted, not to the
+      // inviter: an actor is who acted, never who caused it.
+      const accepted = entries.find((one) => one.action === "member.invitation.accepted");
+      expect(accepted?.actorId).toBe("user_c");
+    });
+  });
+
+  it("refuses to invite someone who is already a member", async () => {
+    await inRolledBackTransaction(db, async (tx) => {
+      await seed(tx);
+      expect(
+        await codeOf(
+          caller(contextFor(tx, ACTOR_A, "org_a")).members.invite({
+            // Case deliberately differs: the addresses are compared folded,
+            // because a capitalised invite that silently never matches is a
+            // support ticket nobody diagnoses.
+            email: "ADA@example.com",
+            role: "member",
+          }),
+        ),
+      ).toBe("CONFLICT");
+    });
+  });
+
+  it("lists members with the identity behind each membership", async () => {
+    await inRolledBackTransaction(db, async (tx) => {
+      await seed(tx);
+      const members = await caller(contextFor(tx, ACTOR_A, "org_a")).members.list();
+      expect(members).toEqual([
+        expect.objectContaining({ userId: "user_a", email: "ada@example.com", role: "owner" }),
+      ]);
+    });
+  });
+});
