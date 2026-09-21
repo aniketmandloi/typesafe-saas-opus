@@ -1,5 +1,5 @@
 {
-  "name": "@repo/auth",
+  "name": "@repo/api",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "repo": {
-    "layer": 3,
+    "layer": 4,
     "platform": "server"
   },
   "scripts": {
@@ -15,17 +15,19 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "1.7.5",
+    "@repo/auth": "workspace:*",
     "@repo/core": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/jobs": "workspace:*",
     "@repo/schema": "workspace:*",
-    "better-auth": "1.7.5",
-    "drizzle-orm": "0.45.2"
+    "@repo/storage": "workspace:*",
+    "@trpc/server": "11.19.0",
+    "drizzle-orm": "0.45.2",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/node": "24.13.6",
     "typescript": "7.0.2",
-    "pg": "8.16.3",
-    "@types/pg": "8.15.5",
     "vitest": "5.0.1"
   }
 }

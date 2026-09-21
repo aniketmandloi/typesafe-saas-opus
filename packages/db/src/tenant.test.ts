@@ -92,10 +92,54 @@ describe("the seam offers no way out", () => {
     expect(Object.keys(tenant).sort()).toEqual([
       "delete",
       "insert",
+      "members",
+      "organization",
       "organizationId",
       "select",
       "update",
+      "updateOrganization",
     ]);
+  });
+});
+
+// The Organization row is the one tenant row whose tenant key is its primary
+// key, so it needs its own pair of operations or the boundary has a hole where
+// #3's growth path goes.
+describe("the tenant's own row is reachable, and only its own", () => {
+  it("scopes the read to this Organization", () => {
+    const { sql, params } = tenant.organization().toSQL();
+    expect(sql).toContain('from "organization"');
+    expect(sql).toContain('"id" = $1');
+    expect(params).toEqual([ORG]);
+  });
+
+  it("scopes the update to this Organization", () => {
+    const { sql, params } = tenant.updateOrganization({ isPersonal: false }).toSQL();
+    expect(sql).toContain('update "organization"');
+    expect(sql).toContain('"id" = $2');
+    expect(params).toEqual([false, ORG]);
+  });
+
+  // Going dark and coming back are never interactive (ADR-0007). The type
+  // leaves the column out; this proves the statement does too, which is what a
+  // caller casting past the types would try.
+  it("cannot go dark through the tenant seam", () => {
+    const { sql, params } = tenant
+      .updateOrganization({ deletedAt: new Date(), isPersonal: false } as never)
+      .toSQL();
+    // Asserted on the SET clause alone: `deleted_at` is in RETURNING either
+    // way, because the row is returned whole.
+    expect(sql.slice(0, sql.indexOf(" where "))).not.toContain("deleted_at");
+    expect(params).toEqual([false, ORG]);
+  });
+});
+
+describe("the one read that crosses into the identity store is still scoped", () => {
+  it("joins user but predicates on member's organization", () => {
+    const { sql, params } = tenant.members().toSQL();
+    expect(sql).toContain('inner join "user"');
+    expect(sql).toContain('"member"."organization_id" = $1');
+    expect(params).toEqual([ORG]);
   });
 });
 

@@ -109,6 +109,12 @@ export const organization = pgTable(
     logo: text("logo"),
     createdAt: timestamp("created_at").notNull(),
     metadata: text("metadata"),
+    // Every user gets one at signup, so there is no org-less mode (#3). It is
+    // cleared in place the first time the owner invites someone, which is why
+    // the growth path moves no data. Declared here *and* as an
+    // `additionalFields` entry on the organization plugin, so checkSchema()
+    // fails if the two ever drift apart.
+    isPersonal: boolean("is_personal").default(false).notNull(),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );
@@ -129,6 +135,9 @@ export const member = pgTable(
   (table) => [
     index("member_organizationId_idx").on(table.organizationId),
     index("member_userId_idx").on(table.userId),
+    // Ours, not the plugin's (#3). Without it a double-accepted invitation
+    // writes two memberships and the last-owner rule counts one person twice.
+    uniqueIndex("member_organization_id_user_id_uidx").on(table.organizationId, table.userId),
   ],
 );
 
@@ -151,6 +160,9 @@ export const invitation = pgTable(
   (table) => [
     index("invitation_organizationId_idx").on(table.organizationId),
     index("invitation_email_idx").on(table.email),
+    // Also ours (#3). One live invitation per address per Organization; a
+    // re-invite updates the row rather than racing a second one.
+    uniqueIndex("invitation_organization_id_email_uidx").on(table.organizationId, table.email),
   ],
 );
 

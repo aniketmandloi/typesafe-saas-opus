@@ -1,9 +1,9 @@
-import { isDark } from "@repo/core";
-import { organization } from "@repo/schema";
+import { isDark, type OrgRole, parseRoles } from "@repo/core";
+import { member, organization, user } from "@repo/schema";
 import { and, eq, type SQL } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 
-import type { Database } from "./client.ts";
+import type { Executor } from "./client.ts";
 
 // Tenant isolation is application-level and enforced by construction
 // (ADR-0001). A use case never receives the raw handle: it receives a TenantDb
@@ -29,6 +29,18 @@ export type TenantQuery<TRow> = PromiseLike<TRow[]> & {
 };
 
 type InsertValues<TTable extends TenantTable> = Omit<TTable["$inferInsert"], "organizationId">;
+
+/**
+ * What a tenant may change about its own Organization row.
+ *
+ * `id` is the tenant key and `deletedAt` is the Dark marker, and both are
+ * absent on purpose: no interactive path deletes or undeletes an Organization
+ * (ADR-0007), so leaving the column out here means no tenant-scoped code can
+ * reach it at all.
+ */
+export type OrganizationUpdate = Partial<
+  Omit<typeof organization.$inferInsert, "id" | "deletedAt">
+>;
 
 const scoped = (table: TenantTable, organizationId: string, extra?: SQL): SQL => {
   const tenant = eq(table.organizationId, organizationId);
@@ -77,6 +89,36 @@ export type TenantDb = {
     table: TTable,
     where?: SQL,
   ): TenantQuery<TTable["$inferSelect"]>;
+  /**
+   * The tenant's own Organization row.
+   *
+   * It is the one tenant row whose tenant key is its primary key, so it is
+   * unreachable through `select`/`update` above — those predicate on an
+   * `organizationId` column the `organization` table does not have. Without
+   * these two the boundary would be incomplete, and promoting a personal
+   * Organization in place (#3's growth path) would need the raw handle.
+   */
+  organization(): TenantQuery<typeof organization.$inferSelect>;
+  updateOrganization(set: OrganizationUpdate): TenantQuery<typeof organization.$inferSelect>;
+  /**
+   * This Organization's memberships, with the identity each one names.
+   *
+   * `select` above is single-table by construction, and a member's email lives
+   * on `user`, which has no tenant column — so the member list is a read the
+   * seam cannot express without help. The answer is a named operation rather
+   * than a join escape hatch: an escape hatch takes the predicate back off, and
+   * that predicate is the entire boundary. Adding one named read per crossing
+   * keeps them countable.
+   */
+  members(): TenantQuery<TenantMember>;
+};
+
+export type TenantMember = {
+  userId: string;
+  email: string;
+  name: string;
+  role: string | null;
+  createdAt: Date;
 };
 
 // Drizzle's builder generics are invariant and do not accept a structurally
@@ -86,7 +128,7 @@ export type TenantDb = {
 // biome-ignore lint/suspicious/noExplicitAny: drizzle's builder generics reject a structural table type
 type AnyBuilder = any;
 
-export const createTenantDb = (db: Database, organizationId: string): TenantDb => ({
+export const createTenantDb = (db: Executor, organizationId: string): TenantDb => ({
   organizationId,
   select(table, where) {
     return (db.select() as AnyBuilder)
@@ -113,12 +155,44 @@ export const createTenantDb = (db: Database, organizationId: string): TenantDb =
       .where(scoped(table, organizationId, where))
       .returning() as AnyBuilder;
   },
+  organization() {
+    return db
+      .select()
+      .from(organization)
+      .where(eq(organization.id, organizationId)) as unknown as TenantQuery<
+      typeof organization.$inferSelect
+    >;
+  },
+  members() {
+    return db
+      .select({
+        userId: member.userId,
+        email: user.email,
+        name: user.name,
+        role: member.role,
+        createdAt: member.createdAt,
+      })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(eq(member.organizationId, organizationId)) as unknown as TenantQuery<TenantMember>;
+  },
+  updateOrganization(set) {
+    // Stripped at runtime, not merely omitted from the type. `update` above
+    // already learned this: a type that leaves a column out stops an honest
+    // caller, and a cast walks straight past it.
+    const { id: _id, deletedAt: _deletedAt, ...rest } = set as Record<string, unknown>;
+    return db
+      .update(organization)
+      .set(rest)
+      .where(eq(organization.id, organizationId))
+      .returning() as unknown as TenantQuery<typeof organization.$inferSelect>;
+  },
 });
 
 // A Dark Organization refuses to open (ADR-0007). One nullable column is the
 // whole mechanism, and checking it here means every tenant-scoped path inherits
 // the refusal instead of each use case remembering to ask.
-export const openTenantDb = async (db: Database, organizationId: string): Promise<TenantDb> => {
+export const openTenantDb = async (db: Executor, organizationId: string): Promise<TenantDb> => {
   const rows = await db
     .select({ deletedAt: organization.deletedAt })
     .from(organization)
@@ -130,4 +204,52 @@ export const openTenantDb = async (db: Database, organizationId: string): Promis
   if (isDark(org)) throw new DarkOrganizationError(organizationId);
 
   return createTenantDb(db, organizationId);
+};
+
+export class NotAMemberError extends Error {
+  organizationId: string;
+  userId: string;
+  constructor(organizationId: string, userId: string) {
+    super(`User ${userId} is not a member of organization ${organizationId}.`);
+    this.name = "NotAMemberError";
+    this.organizationId = organizationId;
+    this.userId = userId;
+  }
+}
+
+export type TenantSession = {
+  tenant: TenantDb;
+  roles: OrgRole[];
+};
+
+/**
+ * Resolve one caller's standing in one Organization, and hand back a TenantDb
+ * bound to it.
+ *
+ * The membership lookup runs on the raw handle, which is the point: this is the
+ * function that *establishes* the boundary, so it cannot be behind it. Keeping
+ * it here rather than in the procedure means every unscoped read in the kit's
+ * request path lives in this one reviewed file — ADR-0001 accepts having no
+ * backstop on the condition that the surface stays small.
+ *
+ * One indexed lookup per request on `member(organizationId, userId)`. Not
+ * cached in v1 (#3).
+ */
+export const openTenantSession = async (
+  db: Executor,
+  organizationId: string,
+  userId: string,
+): Promise<TenantSession> => {
+  const tenant = await openTenantDb(db, organizationId);
+
+  const rows = await db
+    .select({ role: member.role })
+    .from(member)
+    .where(and(eq(member.organizationId, organizationId), eq(member.userId, userId)))
+    .limit(1);
+
+  const membership = rows[0];
+  if (!membership) throw new NotAMemberError(organizationId, userId);
+
+  return { tenant, roles: parseRoles(membership.role) };
 };

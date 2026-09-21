@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { invitationExpiresAt, invitationRefusal } from "./invitation.ts";
 import {
   isDark,
   isPurgeDue,
@@ -117,5 +118,46 @@ describe("an Organization cannot be stranded without an owner", () => {
     expect(wouldStrandOnRoleChange(members, "u1", ["admin"])).toBe(true);
     expect(wouldStrandOnRoleChange(members, "u1", ["owner", "admin"])).toBe(false);
     expect(wouldStrandOnRoleChange(members, "u2", ["member"])).toBe(false);
+  });
+});
+
+describe("an invitation says why it cannot be accepted, in an order that leaks nothing", () => {
+  const now = new Date("2026-09-21T12:00:00Z");
+  const pending = {
+    status: "pending",
+    email: "ada@example.com",
+    expiresAt: new Date("2026-09-25T12:00:00Z"),
+  };
+
+  it("accepts the recipient it was addressed to", () => {
+    expect(invitationRefusal(pending, "ada@example.com", now)).toBeNull();
+  });
+
+  it("folds case, because neither side of the comparison is normalised for us", () => {
+    expect(invitationRefusal(pending, "Ada@Example.com ", now)).toBeNull();
+  });
+
+  it("refuses an invitation that is no longer pending", () => {
+    expect(invitationRefusal({ ...pending, status: "accepted" }, "ada@example.com", now)).toBe(
+      "not-pending",
+    );
+  });
+
+  it("refuses an expired invitation", () => {
+    const expired = { ...pending, expiresAt: new Date("2026-09-20T12:00:00Z") };
+    expect(invitationRefusal(expired, "ada@example.com", now)).toBe("expired");
+  });
+
+  // The order is the assertion. An invitation id arrives by email and is a
+  // bearer token, so answering "not yours" to someone holding an expired link
+  // would tell them whose it is.
+  it("checks the recipient last", () => {
+    const expired = { ...pending, expiresAt: new Date("2026-09-20T12:00:00Z") };
+    expect(invitationRefusal(expired, "grace@example.com", now)).toBe("expired");
+    expect(invitationRefusal(pending, "grace@example.com", now)).toBe("wrong-recipient");
+  });
+
+  it("expires seven days out", () => {
+    expect(invitationExpiresAt(now).toISOString()).toBe("2026-09-28T12:00:00.000Z");
   });
 });

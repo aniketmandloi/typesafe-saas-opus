@@ -25,6 +25,16 @@ export const createAuth = (config: AuthConfig) =>
     emailAndPassword: { enabled: true },
     plugins: [
       organization({
+        // The flag every user's first Organization carries (#3). Declaring it
+        // here is what ties it to the schema: checkSchema() rejects the
+        // instance if the column and this entry ever drift apart.
+        schema: {
+          organization: {
+            additionalFields: {
+              isPersonal: { type: "boolean", required: false, input: false },
+            },
+          },
+        },
         // Better Auth's delete is hard, immediate, and takes `member` with it —
         // and `member` is the reversal handle ADR-0007's grace window needs.
         // Deletion is ours: one nullable column, then a purge job.

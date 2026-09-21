@@ -125,6 +125,46 @@ importers:
         specifier: 5.0.1
         version: 5.0.1(@types/node@24.13.6)(vite@8.3.0(@types/node@24.13.6))
 
+  packages/api:
+    dependencies:
+      '@repo/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@repo/core':
+        specifier: workspace:*
+        version: link:../core
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../db
+      '@repo/jobs':
+        specifier: workspace:*
+        version: link:../jobs
+      '@repo/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@repo/storage':
+        specifier: workspace:*
+        version: link:../storage
+      '@trpc/server':
+        specifier: 11.19.0
+        version: 11.19.0(typescript@7.0.2)
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@types/pg@8.15.5)(kysely@0.29.6)(pg@8.16.3)
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.6
+        version: 24.13.6
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1
+
   packages/auth:
     dependencies:
       '@better-auth/drizzle-adapter':
@@ -155,6 +195,9 @@ importers:
       typescript:
         specifier: 7.0.2
         version: 7.0.2
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1
 
   packages/auth-client:
     dependencies:
@@ -178,6 +221,9 @@ importers:
       typescript:
         specifier: 7.0.2
         version: 7.0.2
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1
 
   packages/db:
     dependencies:
@@ -203,6 +249,9 @@ importers:
       typescript:
         specifier: 7.0.2
         version: 7.0.2
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1
 
   packages/env:
     dependencies:
@@ -216,6 +265,9 @@ importers:
       typescript:
         specifier: 7.0.2
         version: 7.0.2
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1
 
   packages/jobs:
     dependencies:
@@ -226,6 +278,9 @@ importers:
       typescript:
         specifier: 7.0.2
         version: 7.0.2
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1
 
   packages/schema:
     dependencies:
@@ -255,6 +310,9 @@ importers:
       typescript:
         specifier: 7.0.2
         version: 7.0.2
+      vitest:
+        specifier: 5.0.1
+        version: 5.0.1
 
 packages:
 
@@ -520,6 +578,12 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
+  '@trpc/server@11.19.0':
+    resolution: {integrity: sha512-7C1goiDurz82yFKtZUbEzjXd0Rg/jyisaIZQhdvus+1l7E6mwcEYZXjZ1US/HF8kOyz1LERL8UN3bcboJtjcyQ==}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.7.2'
 
   '@turbo/darwin-64@2.11.2':
     resolution: {integrity: sha512-0pGfE4Lpxrbd+6gUD9z025Tn4z9uMaSNZ3VX0H/hkUPZkjY5xrCa1NfTqocs09NM5NiYE3wEVcoYBadrhayRCA==}
@@ -1369,6 +1433,10 @@ snapshots:
   '@rolldown/pluginutils@1.0.1': {}
 
   '@standard-schema/spec@1.1.0': {}
+
+  '@trpc/server@11.19.0(typescript@7.0.2)':
+    dependencies:
+      typescript: 7.0.2
 
   '@turbo/darwin-64@2.11.2':
     optional: true
