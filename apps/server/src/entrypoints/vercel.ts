@@ -1,17 +1,21 @@
 import { createLocalProfile } from "@repo/profiles";
-import { handle } from "hono/vercel";
 
 import { createRuntime } from "../runtime.ts";
 
 // The Vercel entrypoint.
-
-// **This entrypoint composes the local profile, because it is the only profile
-// that exists yet.** That is one import, and it is the one line that changes
-// when the AWS and Vercel profiles land — which is ADR-0006's split doing its
-// job: the profile owns *which adapters*, this file owns the target residue
-// (handler signature, pool policy, and where the parse happens). What is proved
-// here today is the residue, not the adapter set. Do not deploy it as is: it
-// would serve fakes.
+//
+// Vercel's Hono support takes a **default export of the Hono app** and owns the
+// handler signature itself. `hono/vercel`'s `handle()` — what this file used
+// before anyone tried to deploy it — is the Next.js App Router shape, and
+// `apps/server` is not a Next app: it built, which is all a typecheck can tell
+// you, and would not have served. `src/index.ts` is the shim that puts this
+// file at one of the paths Vercel looks in.
+//
+// **This entrypoint composes the local profile**, which means storage, email
+// and the queue are fakes here. That is a deliberate first step and not an
+// oversight: the target residue — handler signature, pool policy, module-scope
+// parse — is what a deployment proves, and the adapter set is ADR-0006's other
+// axis, which lands with the AWS and Vercel profiles. The database is real.
 const profile = createLocalProfile();
 const env = profile.serverSchema.parse(process.env);
 
@@ -24,11 +28,4 @@ const runtime = createRuntime({
   target: { pool: { max: 10 } },
 });
 
-const fetchHandler = handle(runtime.app);
-
-export const GET = fetchHandler;
-export const POST = fetchHandler;
-export const PUT = fetchHandler;
-export const PATCH = fetchHandler;
-export const DELETE = fetchHandler;
-export const OPTIONS = fetchHandler;
+export default runtime.app;
