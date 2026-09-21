@@ -1,5 +1,5 @@
-import { createLocalProfile } from "@repo/profiles";
 import { getRequestListener } from "@hono/node-server";
+import { createLocalProfile } from "@repo/profiles";
 
 import { createRuntime } from "../runtime.ts";
 

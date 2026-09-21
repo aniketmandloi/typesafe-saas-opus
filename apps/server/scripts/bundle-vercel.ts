@@ -39,10 +39,7 @@ await build({
   logLevel: "info",
 });
 
-await writeFile(
-  `${FUNC}/package.json`,
-  `${JSON.stringify({ type: "module" }, null, 2)}\n`,
-);
+await writeFile(`${FUNC}/package.json`, `${JSON.stringify({ type: "module" }, null, 2)}\n`);
 
 await writeFile(
   `${FUNC}/.vc-config.json`,
