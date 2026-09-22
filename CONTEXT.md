@@ -82,6 +82,10 @@ _Avoid_: Auth provider, auth service, auth layer
 A unit of deferred work identified by a typed payload, enqueued by a use case and drained elsewhere. Not a resumable multi-step run — the kit has no durable execution.
 _Avoid_: Task, workflow, background process
 
+**Job envelope**:
+The seam-owned metadata carried beside a Job's payload — today, the trace context that joins a Job back to the request that enqueued it. Every driver carries it and no handler ever reads it, which is the test that distinguishes it from payload: payload is what the work is about, envelope is how the system talks about the work.
+_Avoid_: Headers, metadata, job options
+
 ### Tenancy
 
 **Organization**:
@@ -133,6 +137,10 @@ _Avoid_: Superadmin, staff role, global role
 **Audit entry**:
 The record that one intent occurred: who acted, in which Organization if any, against what. It names the action and its target and never carries the values that changed, which is what keeps the log readable by platform staff without becoming a view onto tenant content.
 _Avoid_: Log line, event, history record, activity
+
+**Telemetry**:
+Traces, logs and error reports: sampled, stored outside our database and disposable. The deliberate opposite of an Audit entry in every property that matters — an Audit entry is durable, tenant-readable and written in the caller's transaction, and Purge reaches it. Purge does not reach Telemetry, which is why the two are never the same record and never share a path.
+_Avoid_: Observability data, monitoring, logs, events
 
 **Actor**:
 Whoever an Audit entry attributes an action to — a member, a platform staff member, a Job or an incoming webhook. Never merely a user id: a Job and a webhook act with no user behind them at all, and an impersonated action has two parties at once.
