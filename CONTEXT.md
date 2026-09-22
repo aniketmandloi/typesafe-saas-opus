@@ -86,6 +86,14 @@ _Avoid_: Task, workflow, background process
 The seam-owned metadata carried beside a Job's payload — today, the trace context that joins a Job back to the request that enqueued it. Every driver carries it and no handler ever reads it, which is the test that distinguishes it from payload: payload is what the work is about, envelope is how the system talks about the work.
 _Avoid_: Headers, metadata, job options
 
+**Worker**:
+The Entrypoint that drains Jobs instead of serving requests. It shares its deployment's profile and differs from the serving Entrypoint only in how it is invoked, so it is never an App of its own — there is one per target, not one per kit.
+_Avoid_: Worker app, background service, consumer, daemon
+
+**Dropped Job**:
+A Job completed without being run, because its handler could not open the tenant the work was for. Distinct from a failed Job, which retries: a drop is the right outcome for work whose Organization went Dark after it was enqueued, and it is never an Audit entry.
+_Avoid_: Skipped job, cancelled job, discarded job
+
 ### Tenancy
 
 **Organization**:
