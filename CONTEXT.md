@@ -150,6 +150,10 @@ _Avoid_: Log line, event, history record, activity
 Traces, logs and error reports: sampled, stored outside our database and disposable. The deliberate opposite of an Audit entry in every property that matters — an Audit entry is durable, tenant-readable and written in the caller's transaction, and Purge reaches it. Purge does not reach Telemetry, which is why the two are never the same record and never share a path.
 _Avoid_: Observability data, monitoring, logs, events
 
+**Rate limit bucket**:
+One caller's consumption of one quota over a rolling window, keyed on an identity the server has verified rather than one the caller claimed. Neither an Audit entry nor Telemetry: it lives in our database but records no intent, and it outlives nothing — which is why Purge has no work to do against it.
+_Avoid_: Quota, counter, throttle, window
+
 **Actor**:
 Whoever an Audit entry attributes an action to — a member, a platform staff member, a Job or an incoming webhook. Never merely a user id: a Job and a webhook act with no user behind them at all, and an impersonated action has two parties at once.
 _Avoid_: User, subject, principal
