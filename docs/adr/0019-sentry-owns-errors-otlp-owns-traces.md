@@ -18,9 +18,11 @@ Sentry v10 is built on OpenTelemetry and automatically adopts any span created t
 
 Had the kit relied on "instrument with the OTel API, let Sentry collect it", that reversal would be a migration. Because Sentry never carries traces here, **it does not matter to this kit whether Sentry adopts OpenTelemetry spans or not**. That durability is a large part of why the split is worth its cost. (v11 was at RC when this was decided, not GA; `@sentry/nextjs` is one of two packages where the OpenTelemetry path stays on by default.)
 
+**That default has a name and a consequence on v11**: `enableOpenTelemetrySetup` defaults to `true` on `@sentry/nextjs` and `@sentry/sveltekit` and `false` everywhere else, so the **web Entrypoint must set it `false` and leave `tracesSampleRate` unset** — v11 emits HTTP and fetch spans whenever tracing is on, regardless of that flag. `@sentry/node` already defaults it to `false`, so the server and worker Entrypoints need no opt-out.
+
 ## What the split actually costs
 
-**Two configurations on the server**, and **the trace id has to be stitched onto Sentry errors by hand** so an error links to the trace that produced it. Nothing does this for us, and an error with no trace id is the failure mode that makes people ask why there are two systems.
+**Two configurations on the server**, and **the trace id has to be stitched onto Sentry errors by hand** so an error links to the trace that produced it. Nothing does this for us on v10 — v11's `openTelemetryIntegration()` attaches errors, logs, metrics and crons to the active OTel span, which retires this cost **server-side only**, leaving the web half of it standing — and an error with no trace id is the failure mode that makes people ask why there are two systems.
 
 ## Per-target facts this decision inherits
 
@@ -30,7 +32,7 @@ Had the kit relied on "instrument with the OTel API, let Sentry collect it", tha
 
 ## Two live risks this decision carries
 
-**`@sentry/nextjs` on Next.js 16 is unverified.** `apps/web` is on 16.3.5; Sentry's manual-setup docs target "Next.js 15+". Not known-broken, not known-good. It wants a smoke test before the web client reporting is believed.
+**~~`@sentry/nextjs` on Next.js 16 is unverified.~~ Resolved: it is supported, and has been since `10.20.0` (2025-10-15).** The "Next.js 15+" wording in the manual-setup docs is a floor, not a ceiling — `10.75.1` peers `^16.0.0-0`, and the SDK repo carries a `nextjs-16` e2e application at that tag which calls `withSentryConfig` under both the Turbopack default and `--webpack`. `instrumentation.ts`, `onRequestError` and `instrumentation-client.ts` are unchanged on 16. Two quality caveats survive, neither threatening this decision: function names stay mangled in Turbopack stack traces ([#18248](https://github.com/getsentry/sentry-javascript/issues/18248)), and Next 16's rename of middleware to proxy left proxy-thrown errors as the one capture path with no coverage in the SDK's own CI ([#23945](https://github.com/getsentry/sentry-javascript/issues/23945)). Established by [#42](https://github.com/aniketmandloi/typesafe-saas-opus/issues/42).
 
 **Expo source-map upload fails silently.** `@sentry/react-native` has an open bug where the config plugin is not applied during EAS *cloud* prebuild, so source maps and debug symbols never upload. The build is green and the crashes are unsymbolicated, which is the worst shape a failure can take. The kit's CI needs a check that an uploaded bundle actually has its Debug ID, not merely that the build passed.
 
